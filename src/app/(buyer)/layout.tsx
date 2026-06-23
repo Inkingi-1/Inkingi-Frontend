@@ -149,52 +149,52 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
       <footer className="bg-surface-container-highest dark:bg-inverse-surface w-full mt-auto border-t border-outline-variant/30">
         <div className="w-full py-lg px-margin-mobile md:px-margin-desktop grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <span className="font-headline-md text-headline-md text-primary mb-4 block">BuildConnect</span>
-            <p className="text-on-surface-variant max-w-sm mb-6">
+            <span className="font-headline-md text-headline-md text-primary dark:text-primary-fixed-dim mb-4 block">BuildConnect</span>
+            <p className="text-on-surface-variant dark:text-secondary-fixed-dim max-w-sm mb-6">
               Empowering Rwanda's construction industry through digital innovation and reliable supply chains.
             </p>
             <div className="flex gap-4">
-              <span className="material-symbols-outlined text-primary cursor-pointer hover:scale-110 transition-transform">social_leaderboard</span>
-              <span className="material-symbols-outlined text-primary cursor-pointer hover:scale-110 transition-transform">crossword</span>
-              <span className="material-symbols-outlined text-primary cursor-pointer hover:scale-110 transition-transform">link</span>
+              <span className="material-symbols-outlined text-primary dark:text-primary-fixed-dim cursor-pointer hover:scale-110 transition-transform">social_leaderboard</span>
+              <span className="material-symbols-outlined text-primary dark:text-primary-fixed-dim cursor-pointer hover:scale-110 transition-transform">crossword</span>
+              <span className="material-symbols-outlined text-primary dark:text-primary-fixed-dim cursor-pointer hover:scale-110 transition-transform">link</span>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-8">
             <div>
-              <h5 className="font-label-bold text-primary mb-4">PLATFORM</h5>
+              <h5 className="font-label-bold text-primary dark:text-primary-fixed-dim mb-4">PLATFORM</h5>
               <ul className="space-y-3">
                 <li>
-                  <Link href="/marketplace" className="text-on-surface-variant hover:text-primary transition-colors text-body-sm">
+                  <Link href="/marketplace" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
                     Marketplace
                   </Link>
                 </li>
                 <li>
-                  <Link href="/stores" className="text-on-surface-variant hover:text-primary transition-colors text-body-sm">
+                  <Link href="/stores" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
                     Suppliers Directory
                   </Link>
                 </li>
                 <li>
-                  <button onClick={() => setShowPostRequirementModal(true)} className="text-on-surface-variant hover:text-primary transition-colors text-body-sm text-left">
+                  <button onClick={() => setShowPostRequirementModal(true)} className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm text-left">
                     Request Quotes
                   </button>
                 </li>
               </ul>
             </div>
             <div>
-              <h5 className="font-label-bold text-primary mb-4">SUPPORT</h5>
+              <h5 className="font-label-bold text-primary dark:text-primary-fixed-dim mb-4">SUPPORT</h5>
               <ul className="space-y-3">
                 <li>
-                  <a href="#" className="text-on-surface-variant hover:text-primary transition-colors text-body-sm">
+                  <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
                     Help Center
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-on-surface-variant hover:text-primary transition-colors text-body-sm">
+                  <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
                     Contact Us
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-on-surface-variant hover:text-primary transition-colors text-body-sm">
+                  <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
                     Privacy Policy
                   </a>
                 </li>
@@ -203,13 +203,13 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
         <div className="border-t border-outline-variant px-margin-mobile md:px-margin-desktop py-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <span className="text-on-surface-variant font-body-sm">
+          <span className="text-on-surface-variant dark:text-secondary-fixed-dim font-body-sm">
             © 2024 BuildConnect Rwanda. Solid Ground for Modern Construction.
           </span>
           <div className="flex gap-6">
-            <a href="#" className="text-on-surface-variant hover:text-primary text-body-sm">Terms</a>
-            <a href="#" className="text-on-surface-variant hover:text-primary text-body-sm">Privacy</a>
-            <a href="#" className="text-on-surface-variant hover:text-primary text-body-sm">Cookies</a>
+            <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed text-body-sm">Terms</a>
+            <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed text-body-sm">Privacy</a>
+            <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed text-body-sm">Cookies</a>
           </div>
         </div>
       </footer>
