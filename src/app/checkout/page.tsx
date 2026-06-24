@@ -4,14 +4,18 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
+import { ordersApi, paymentsApi } from "@/lib/api";
+import { ApiError } from "@/lib/api/client";
 
 export default function Checkout() {
   const router = useRouter();
   const { cart, clearCart } = useApp();
+  const { isAuthenticated } = useAuth();
   const [activeStep, setActiveStep] = useState(1);
   const [selectedAddress, setSelectedAddress] = useState("main");
   const [deliveryMethod, setDeliveryMethod] = useState("standard");
-  const [paymentMethod, setPaymentMethod] = useState("momo");
+  const [paymentMethod, setPaymentMethod] = useState("cod");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -19,14 +23,32 @@ export default function Checkout() {
   const vat = Math.round(subtotal * 0.18);
   const total = subtotal + shippingCost + vat;
 
-  const handleCompleteOrder = () => {
+  const handleCompleteOrder = async () => {
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+    if (cart.length === 0) return;
+
     setIsSubmitting(true);
-    setTimeout(() => {
-      // Create a mock order inside localstorage if needed, or just clear cart
-      clearCart();
+    try {
+      const order = await ordersApi.create({
+        street: selectedAddress === "main" ? "Vision City Phase II - Plot 402" : "Masoro Warehouse Alpha",
+        city: "Kigali",
+        district: selectedAddress === "main" ? "Gasabo" : "Masoro",
+        country: "Rwanda",
+      });
+      await paymentsApi.initiate(order._id, "cash_on_delivery");
+      await clearCart();
+      if (typeof window !== "undefined") {
+        localStorage.setItem("bc_last_order_id", order._id);
+      }
+      router.push(`/orders/track?orderId=${order._id}`);
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Checkout failed. Sign in as customer and ensure API is running.");
+    } finally {
       setIsSubmitting(false);
-      router.push("/orders/track");
-    }, 2000);
+    }
   };
 
   const scrollToSection = (id: string, step: number) => {
@@ -51,9 +73,9 @@ export default function Checkout() {
           <h1 className="font-headline-md text-headline-md font-bold text-primary">BuildConnect</h1>
         </div>
         <div className="flex items-center gap-xs">
-          <div className="flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary-container rounded-full shadow-sm text-xs font-bold uppercase tracking-wider">
+          <div className="flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary-container rounded-full shadow-sm text-xs font-bold">
             <span className="material-symbols-outlined text-[18px]">lock</span>
-            <span>SECURE CHECKOUT</span>
+            <span>Secure checkout</span>
           </div>
         </div>
       </header>
@@ -76,8 +98,8 @@ export default function Checkout() {
               >
                 1
               </div>
-              <span className={`text-[10px] font-bold uppercase tracking-wider ${activeStep === 1 ? "text-primary" : "text-on-surface-variant"}`}>
-                ADDRESS
+              <span className={`text-[10px] font-bold ${activeStep === 1 ? "text-primary" : "text-on-surface-variant"}`}>
+                Address
               </span>
             </button>
 
@@ -94,8 +116,8 @@ export default function Checkout() {
               >
                 2
               </div>
-              <span className={`text-[10px] font-bold uppercase tracking-wider ${activeStep === 2 ? "text-primary" : "text-on-surface-variant"}`}>
-                SHIPPING
+              <span className={`text-[10px] font-bold ${activeStep === 2 ? "text-primary" : "text-on-surface-variant"}`}>
+                Shipping
               </span>
             </button>
 
@@ -112,8 +134,8 @@ export default function Checkout() {
               >
                 3
               </div>
-              <span className={`text-[10px] font-bold uppercase tracking-wider ${activeStep === 3 ? "text-primary" : "text-on-surface-variant"}`}>
-                PAYMENT
+              <span className={`text-[10px] font-bold ${activeStep === 3 ? "text-primary" : "text-on-surface-variant"}`}>
+                Payment
               </span>
             </button>
           </div>
@@ -377,14 +399,14 @@ export default function Checkout() {
           <div className="flex gap-4 w-full md:w-auto">
             <button
               onClick={() => router.push("/cart")}
-              className="flex-grow md:flex-initial px-6 py-3 border border-primary text-primary hover:bg-primary/5 rounded-xl font-label-bold text-xs uppercase tracking-wider transition-all active:scale-95 duration-100"
+              className="flex-grow md:flex-initial px-6 py-3 border border-primary text-primary hover:bg-primary/5 rounded-xl font-label-bold text-xs transition-all active:scale-95 duration-100"
             >
               SAVE DRAFT
             </button>
             <button
               onClick={handleCompleteOrder}
               disabled={isSubmitting}
-              className="flex-grow md:flex-initial px-10 py-3 bg-tertiary text-on-tertiary hover:brightness-110 rounded-xl font-label-bold text-xs uppercase tracking-wider shadow-lg hover:shadow-xl transition-all active:scale-95 duration-100 flex items-center justify-center gap-2 disabled:opacity-50"
+              className="flex-grow md:flex-initial px-10 py-3 bg-tertiary text-on-tertiary hover:brightness-110 rounded-xl font-label-bold text-xs shadow-lg hover:shadow-xl transition-all active:scale-95 duration-100 flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>
@@ -392,7 +414,7 @@ export default function Checkout() {
                   Processing...
                 </>
               ) : (
-                "COMPLETE ORDER"
+                "Complete order"
               )}
             </button>
           </div>

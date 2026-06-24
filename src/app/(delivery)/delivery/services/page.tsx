@@ -3,312 +3,157 @@
 import React, { useState } from "react";
 import Link from "next/link";
 
-export default function DeliveryServicesPage() {
-  const [calcOpen, setCalcOpen] = useState(false);
-  const [calcWeight, setCalcWeight] = useState("");
-  const [calcZone, setCalcZone] = useState("Kigali Metro");
-  const [calculatedFee, setCalculatedFee] = useState<number | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+const ZONES = [
+  { id: "metro", label: "Kigali metro", multiplier: 1 },
+  { id: "urban", label: "Urban districts", multiplier: 1.35 },
+  { id: "rural", label: "Rural / upcountry", multiplier: 1.85 },
+];
 
-  const handleCalculate = (e: React.FormEvent) => {
-    e.preventDefault();
-    const weight = parseFloat(calcWeight) || 0;
-    let base = 0;
-    if (calcZone === "Kigali Metro") {
-      base = weight > 10 ? 0 : 5000; // Free for heavy loads (bulk order simulation)
-    } else if (calcZone === "Peri-Urban") {
-      base = 15000 + weight * 500;
-    } else {
-      base = 45000 + weight * 1000;
-    }
+const TIERS = [
+  {
+    name: "Standard",
+    price: "From RWF 2,000",
+    desc: "Same-day delivery within Kigali for loads under 500 kg.",
+    icon: "local_shipping",
+  },
+  {
+    name: "Heavy haul",
+    price: "From RWF 8,500",
+    desc: "Flatbed and tipper trucks for cement, steel, and aggregates.",
+    icon: "fire_truck",
+  },
+  {
+    name: "Express",
+    price: "From RWF 4,500",
+    desc: "Priority dispatch with live GPS tracking for urgent site needs.",
+    icon: "bolt",
+  },
+];
 
-    setCalculatedFee(base);
-  };
+function estimateFee(weightKg: number, zoneId: string): number {
+  const zone = ZONES.find((z) => z.id === zoneId) ?? ZONES[0];
+  const base = 2000;
+  const perKg = 45;
+  return Math.round((base + weightKg * perKg) * zone.multiplier);
+}
 
-  const triggerToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 2500);
+export default function LogisticsOffersPage() {
+  const [weight, setWeight] = useState("50");
+  const [zone, setZone] = useState("metro");
+  const [toast, setToast] = useState<string | null>(null);
+
+  const weightNum = Math.max(0, Number(weight) || 0);
+  const estimate = estimateFee(weightNum, zone);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
   };
 
   return (
-    <div className="w-full animate-in fade-in duration-300">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-6 right-6 z-[99] bg-emerald-800 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-top-4 duration-300">
-          <span className="material-symbols-outlined text-green-400">check_circle</span>
-          <span className="font-label-bold">{toastMessage}</span>
+    <div className="w-full pb-20 lg:pb-0">
+      {toast && (
+        <div className="fixed top-20 right-6 z-[99] bg-primary text-on-primary px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+          <span className="material-symbols-outlined">check_circle</span>
+          <span className="font-bold text-sm">{toast}</span>
         </div>
       )}
 
-      {/* Hero Section */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center mb-10">
-        <div className="space-y-4">
-          <span className="text-tertiary font-label-bold text-label-bold tracking-widest uppercase text-xs">
-            Kigali Industrial Hub
-          </span>
-          <h2 className="font-headline-xl text-headline-lg-mobile md:text-headline-xl text-primary leading-tight font-bold">
-            Solid Ground for Your Logistics.
-          </h2>
-          <p className="text-body-lg font-body-lg text-on-surface-variant max-w-xl leading-relaxed">
-            Transparency in every ton. Whether it's structural steel or finishing tiles, our delivery network ensures your site never stands still.
-          </p>
-          <div className="flex flex-wrap gap-4 pt-4">
-            <button
-              onClick={() => setCalcOpen(!calcOpen)}
-              className="bg-primary text-on-primary px-6 py-3 rounded-lg font-label-bold flex items-center gap-2 hover:shadow-lg transition-all active:scale-95 cursor-pointer text-xs uppercase"
-            >
-              Calculate Fee
-              <span className="material-symbols-outlined text-sm">calculate</span>
-            </button>
+      <section className="mb-8">
+        <h1 className="font-headline-lg text-primary font-bold">Logistics offers</h1>
+        <p className="text-on-surface-variant text-sm mt-1">
+          Fleet coverage, service tiers, and instant delivery fee estimates for Rwanda.
+        </p>
+      </section>
+
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        {TIERS.map((tier) => (
+          <div key={tier.name} className="bg-white rounded-xl p-6 border border-outline-variant/15 shadow-sm">
+            <span className="material-symbols-outlined text-primary text-3xl mb-3">{tier.icon}</span>
+            <h3 className="font-bold text-primary text-lg">{tier.name}</h3>
+            <p className="text-tertiary font-bold text-sm mt-1">{tier.price}</p>
+            <p className="text-on-surface-variant text-sm mt-3 leading-relaxed">{tier.desc}</p>
+          </div>
+        ))}
+      </section>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <section className="bg-white rounded-xl p-6 md:p-8 border border-outline-variant/15 shadow-sm">
+          <h2 className="font-bold text-primary text-lg mb-4">Delivery fee calculator</h2>
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm font-bold text-on-surface-variant mb-2">Load weight (kg)</label>
+              <input
+                type="number"
+                min={0}
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                className="w-full h-12 px-4 border border-outline-variant rounded-lg outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-on-surface-variant mb-2">Delivery zone</label>
+              <select
+                value={zone}
+                onChange={(e) => setZone(e.target.value)}
+                className="w-full h-12 px-4 border border-outline-variant rounded-lg outline-none cursor-pointer"
+              >
+                {ZONES.map((z) => (
+                  <option key={z.id} value={z.id}>
+                    {z.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="bg-primary-container text-on-primary-container rounded-xl p-5">
+              <p className="text-xs font-bold uppercase opacity-80">Estimated fee</p>
+              <p className="font-headline-lg font-bold mt-1">RWF {estimate.toLocaleString()}</p>
+              <p className="text-xs mt-2 opacity-80">Indicative quote — final fee may vary by access road and load type.</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white rounded-xl p-6 md:p-8 border border-outline-variant/15 shadow-sm">
+          <h2 className="font-bold text-primary text-lg mb-4">Coverage & fleet</h2>
+          <ul className="space-y-3 text-sm text-on-surface-variant">
+            <li className="flex gap-2">
+              <span className="material-symbols-outlined text-primary text-lg shrink-0">check_circle</span>
+              Kigali City — Gasabo, Kicukiro, Nyarugenge
+            </li>
+            <li className="flex gap-2">
+              <span className="material-symbols-outlined text-primary text-lg shrink-0">check_circle</span>
+              Eastern corridor — Rwamagana, Kayonza, Kibungo
+            </li>
+            <li className="flex gap-2">
+              <span className="material-symbols-outlined text-primary text-lg shrink-0">check_circle</span>
+              Fleet: pickups, 3.5t box trucks, 10t flatbeds
+            </li>
+          </ul>
+
+          <div className="flex flex-col sm:flex-row gap-3 mt-8">
             <Link
               href="/orders/track"
-              className="border border-primary text-primary px-6 py-3 rounded-lg font-label-bold hover:bg-primary/5 transition-all text-xs uppercase cursor-pointer text-center"
+              className="flex-1 text-center px-5 py-3 bg-primary text-on-primary rounded-xl font-bold text-sm hover:brightness-110 transition-all"
             >
-              Track Shipment
+              Track shipment
             </Link>
+            <button
+              type="button"
+              onClick={() => showToast("Quote request sent — our team will call you within 2 hours.")}
+              className="flex-1 px-5 py-3 border border-primary text-primary rounded-xl font-bold text-sm hover:bg-primary/5 transition-all"
+            >
+              Request quote
+            </button>
+            <button
+              type="button"
+              onClick={() => showToast("Support line: +250 788 000 004 — available 24/7.")}
+              className="flex-1 px-5 py-3 border border-outline-variant text-on-surface rounded-xl font-bold text-sm hover:bg-surface-container transition-all"
+            >
+              Contact logistics
+            </button>
           </div>
-        </div>
-
-        <div className="relative rounded-xl overflow-hidden shadow-xl aspect-video lg:aspect-square">
-          <img
-            alt="Warehouse Operations"
-            className="w-full h-full object-cover"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWKMqgdY0qxKjjOIvzQ9p0REEIfejZKyWuK7-sb8EttHBIdWeVIXv917cPC3HD6PPd1oYGkOd31zu9Kxx3v0x_u8whfSVOs7Sf85IY9ScOsaI6OlbGJbF9WFr2W4sOKPBJ0NMkShXDzIrbsiyB33ZJMHombxsAFu7Hwt0GswFjeyW6NM_kirz1ekseueeL-MFrF8OQt9wMeTRbqFowPQ7CVkEM633KTIRAfrLvU6_knLEdRGc_rCZYKkFaKAzG3sjOIZM67BpxgJQ"
-          />
-          <div className="absolute bottom-6 left-6 right-6 bg-white/90 backdrop-blur-md p-4 rounded-lg flex items-center justify-between border-l-4 border-l-tertiary border border-outline-variant/30">
-            <div>
-              <p className="font-label-bold text-primary text-sm">Live Hub Traffic</p>
-              <p className="text-xs text-on-surface-variant font-medium">Optimal loading times currently active.</p>
-            </div>
-            <div className="flex items-center text-emerald-700 gap-1 shrink-0">
-              <span className="material-symbols-outlined text-[16px]">check_circle</span>
-              <span className="text-label-bold text-xs uppercase tracking-wider">FAST</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Interactive Calculator Drawer/Modal */}
-      {calcOpen && (
-        <div className="bg-white border border-outline-variant/30 rounded-xl p-6 shadow-md mb-8 max-w-xl animate-in slide-in-from-top duration-200">
-          <h3 className="font-headline-md text-headline-md text-primary font-bold mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined">calculate</span>
-            Freight Calculator
-          </h3>
-          <form onSubmit={handleCalculate} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-label-bold text-on-surface-variant mb-1 uppercase">
-                  ESTIMATED WEIGHT (TONS)
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g. 5.5"
-                  value={calcWeight}
-                  onChange={(e) => setCalcWeight(e.target.value)}
-                  className="w-full h-11 px-3 border border-outline-variant/30 rounded-lg outline-none focus:ring-2 focus:ring-primary/20 text-sm"
-                  required
-                  step="0.1"
-                  min="0.1"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-label-bold text-on-surface-variant mb-1 uppercase">
-                  DESTINATION ZONE
-                </label>
-                <select
-                  value={calcZone}
-                  onChange={(e) => setCalcZone(e.target.value)}
-                  className="w-full h-11 px-3 border border-outline-variant/30 rounded-lg outline-none focus:ring-2 focus:ring-primary/20 text-sm cursor-pointer"
-                >
-                  <option>Kigali Metro</option>
-                  <option>Peri-Urban</option>
-                  <option>Rural Districts</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex gap-4 items-center justify-between pt-2">
-              <button
-                type="submit"
-                className="bg-primary text-on-primary px-6 py-2.5 rounded-lg text-xs font-bold uppercase active:scale-95 cursor-pointer"
-              >
-                Get Cost Estimate
-              </button>
-              {calculatedFee !== null && (
-                <div className="text-right">
-                  <span className="text-xs text-on-surface-variant block font-medium">Estimated Fee:</span>
-                  <span className="font-bold text-lg text-tertiary">
-                    {calculatedFee === 0 ? "FREE DELIVERY" : `${calculatedFee.toLocaleString()} RWF`}
-                  </span>
-                </div>
-              )}
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Bento Grid: Service Options */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div className="bg-white p-6 rounded-xl border border-outline-variant/20 shadow-sm flex flex-col items-center text-center space-y-3 hover:translate-y-[-4px] transition-transform duration-300">
-          <div className="w-16 h-16 bg-secondary-container text-primary rounded-full flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-[32px]">store</span>
-          </div>
-          <h3 className="font-headline-md text-headline-md text-primary font-bold">Self-Pickup</h3>
-          <p className="text-body-sm text-on-surface-variant leading-relaxed">
-            Collect directly from Kigali Industrial Hub. No loading fees, immediate availability.
-          </p>
-          <div className="pt-2 text-tertiary font-label-bold text-sm">RWF 0</div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl border-2 border-primary/15 shadow-sm flex flex-col items-center text-center space-y-3 hover:translate-y-[-4px] transition-transform duration-300">
-          <div className="w-16 h-16 bg-primary-container text-on-primary-container rounded-full flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-[32px]">local_shipping</span>
-          </div>
-          <h3 className="font-headline-md text-headline-md text-primary font-bold">Doorstep Delivery</h3>
-          <p className="text-body-sm text-on-surface-variant leading-relaxed">
-            Last-mile logistics to your construction site with heavy-vehicle crane off-loading support.
-          </p>
-          <div className="pt-2 text-tertiary font-label-bold text-sm">From RWF 5,000</div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl border border-outline-variant/20 shadow-sm flex flex-col items-center text-center space-y-3 hover:translate-y-[-4px] transition-transform duration-300">
-          <div className="w-16 h-16 bg-tertiary-container text-on-tertiary-container rounded-full flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-[32px]">hub</span>
-          </div>
-          <h3 className="font-headline-md text-headline-md text-primary font-bold">Project Logistics</h3>
-          <p className="text-body-sm text-on-surface-variant leading-relaxed">
-            Scheduled multi-load deliveries locked to lock pricing over large-scale development phases.
-          </p>
-          <div className="pt-2 text-tertiary font-label-bold text-sm">Custom Quote</div>
-        </div>
-      </section>
-
-      {/* Delivery Zone & Fee Schedule */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-surface-container-low rounded-2xl p-6 mb-10 border border-outline-variant/20">
-        {/* Map Visualization */}
-        <div className="lg:col-span-7 space-y-3">
-          <div className="flex justify-between items-center px-2">
-            <h3 className="font-headline-md text-headline-md text-primary font-bold">Coverage Map</h3>
-            <div className="flex gap-4">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant">
-                <span className="w-2.5 h-2.5 rounded-full bg-primary block"></span> Metro
-              </div>
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant">
-                <span className="w-2.5 h-2.5 rounded-full bg-tertiary block"></span> Rural
-              </div>
-            </div>
-          </div>
-          <div className="aspect-video w-full rounded-xl overflow-hidden border border-outline-variant/20 relative">
-            <img
-              alt="Kigali Delivery Zones"
-              className="w-full h-full object-cover grayscale-[0.4]"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1hFSCOzLCDP2hBZ9AbHtmn-qOhPUUNY3oT3aTMkRC5eeUhXmm_zWF_MyjhCe1SrwGbz1y4OXiN6WkBdvUZtt2uzF_pcRO6nTjfe8enzZqdOiYItZ2v3R67RYv8Cjhxoz_7XkSsP4CocJRwPMviwtI40Yaut-Ei_eyGHZf845OHPXthWkX60WJuAgMmIY_9RSAndcNSnAsmWbdTFX7mG8yCQX8uzqu9uwdzC3pHnoX_CJe_UMuQA5tOvwQADRKffLqanZrRKl3fto"
-            />
-            <div className="absolute inset-0 p-4">
-              <div className="absolute top-1/2 left-1/3 w-8 h-8 bg-primary/20 animate-ping rounded-full"></div>
-              <div className="absolute top-1/2 left-1/3 w-4 h-4 bg-primary rounded-full border-2 border-white"></div>
-            </div>
-          </div>
-        </div>
-
-        {/* Fee & Timeline Table */}
-        <div className="lg:col-span-5 flex flex-col space-y-4">
-          <h3 className="font-headline-md text-headline-md text-primary font-bold">Service Schedule</h3>
-          <div className="bg-white rounded-xl overflow-hidden border border-outline-variant/20 shadow-sm">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-surface-variant/40 border-b border-outline-variant/20 text-xs font-label-bold text-primary">
-                  <th className="p-4">Zone</th>
-                  <th className="p-4">Cost</th>
-                  <th className="p-4">Timeline</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm">
-                <tr className="border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors">
-                  <td className="p-4">
-                    <p className="font-bold text-on-surface">Kigali Metro</p>
-                    <p className="text-xs text-on-surface-variant font-medium">Nyarugenge, Kicukiro, Gasabo</p>
-                  </td>
-                  <td className="p-4 text-tertiary font-bold">FREE*</td>
-                  <td className="p-4 text-on-surface font-medium">Same-day</td>
-                </tr>
-                <tr className="border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors">
-                  <td className="p-4">
-                    <p className="font-bold text-on-surface">Peri-Urban</p>
-                    <p className="text-xs text-on-surface-variant font-medium">Bugesera, Rwamagana</p>
-                  </td>
-                  <td className="p-4 font-bold text-on-surface">15,000 RWF</td>
-                  <td className="p-4 text-on-surface font-medium">24 Hours</td>
-                </tr>
-                <tr className="hover:bg-surface-container-low transition-colors">
-                  <td className="p-4">
-                    <p className="font-bold text-on-surface">Rural Districts</p>
-                    <p className="text-xs text-on-surface-variant font-medium">Upcountry Hubs</p>
-                  </td>
-                  <td className="p-4 font-bold text-on-surface">45,000+ RWF</td>
-                  <td className="p-4 text-on-surface font-medium">48-72 Hours</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p className="text-xs text-on-surface-variant italic px-2">
-            *Free delivery applies to orders above RWF 500,000 within the Metro zone.
-          </p>
-          <div className="mt-auto p-4 bg-tertiary-fixed rounded-xl flex items-start gap-4 border border-tertiary/10">
-            <span className="material-symbols-outlined text-tertiary text-2xl shrink-0">info</span>
-            <p className="text-xs text-on-tertiary-fixed font-medium leading-relaxed">
-              Heavy cargo requiring crane offloading may incur additional equipment fees. Contact support for site assessment.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Materials Handling Guarantee */}
-      <section className="bg-primary text-on-primary rounded-2xl overflow-hidden relative border border-primary/20 shadow-md">
-        <div
-          className="absolute inset-0 opacity-10 pointer-events-none"
-          style={{
-            backgroundImage: "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
-            backgroundSize: "24px 24px",
-          }}
-        ></div>
-        <div className="p-8 md:p-12 relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-          <div>
-            <h2 className="font-headline-lg text-white font-bold mb-4">Handling with Precision.</h2>
-            <p className="text-on-primary-container text-body-lg mb-6 leading-relaxed">
-              We understand the fragility of ceramics and the weight of rebar. Our logistics team is trained specifically for construction material handling.
-            </p>
-            <ul className="space-y-4 text-sm font-semibold">
-              <li className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-secondary-fixed">verified</span>
-                <span>Moisture-protected transport for cement and plaster bags.</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-secondary-fixed">verified</span>
-                <span>Shock-absorbent loading for premium tiles and glass handles.</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-secondary-fixed">verified</span>
-                <span>Real-time GPS tracking link for all site deliveries.</span>
-              </li>
-            </ul>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <img
-              className="rounded-lg shadow-lg w-full h-40 object-cover border-2 border-white/10"
-              alt="Driver securing load"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOwjnBExwGvVP9EZbBl2gx_jBRD6qQ4E93Y-r-R72sh94HWFNEdoXo3aYYF7BoWffn78YLPEO-jkYQWtx_dEiqPi2Se2SVJfeoPUj_1eGi-_oZLYMXGwUj8Tg5fSAMGuRwr7DXNXykOkQ1QTMMgZIkzn-Ebuxf_cT4VqCB4h_UujgNh4HoLN8SrRRwUUAwUb1dyMQh9GDapBfW7F707CBLHKMx8lJ9yZtwiksGnmeG3IvDw5b1SJQKMbyTLPKsGNvMZw3SNy-y84o"
-            />
-            <img
-              className="rounded-lg shadow-lg w-full h-40 object-cover mt-6 border-2 border-white/10"
-              alt="Logistics truck"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBG5CXIooz6dtilmV--fQCuFVZ79oddn1cxbQN6KVHl_2DQuGrGRcN4KLvMw1grD3FZ7QmD735znZq7qhZJzFwuyjaTmUsbsQMEH3taEV2eLPOsXjBEadu_4UE3d0aNjWKNiFRlqT5CHdkIcUvzDKRvTImipV2Owquwicr0kOULGOtQQy1XRsGpY4tQ_NtBXqDwCWoQxEVrxmvAlVgD9PJQiJRlauRRaERVUzjbB2Xb9Dyn6rkPLQM80Ls7tRzkWUUdQTGv7E55xXY"
-            />
-          </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   );
 }

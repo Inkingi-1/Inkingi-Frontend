@@ -1,89 +1,81 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
+import { useFeaturedProducts, useCategories, useVendors } from "@/hooks/useApiData";
+import { categoryName, productImage, productPrice, vendorName, vendorLogoImage, requirementsApi } from "@/lib/api";
+import { resolveMaterialImage } from "@/lib/productImages";
+
+const CATEGORY_ICONS: Record<string, string> = {
+  cement: "precision_manufacturing",
+  roofing: "architecture",
+  plumbing: "plumbing",
+  electrical: "electric_bolt",
+  paints: "format_paint",
+  tiles: "grid_view",
+  steel: "construction",
+  tools: "build",
+  safety: "health_and_safety",
+};
 
 export default function LandingPage() {
-  const { addToCart } = useApp();
+  const { addToCart, setShowPostRequirementModal } = useApp();
+  const { isAuthenticated } = useAuth();
+  const { products: featuredProducts, loading: featuredLoading } = useFeaturedProducts(4);
+  const apiCategories = useCategories();
+  const { data: vendorsData } = useVendors();
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
+  const [requirements, setRequirements] = useState<
+    Array<{ _id: string; material: string; quantity: string; location: string; description?: string; createdAt?: string }>
+  >([]);
 
-  const categories = [
-    { name: "Cement", icon: "precision_manufacturing", tag: "cement" },
-    { name: "Iron Sheets", icon: "architecture", tag: "roofing" },
-    { name: "Plumbing", icon: "plumbing", tag: "plumbing" },
-    { name: "Electrical", icon: "electric_bolt", tag: "electrical" },
-    { name: "Paints", icon: "format_paint", tag: "paints" },
-    { name: "Tiles", icon: "grid_view", tag: "tiles" },
-  ];
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setRequirements([]);
+      return;
+    }
+    const load = () => {
+      requirementsApi
+        .list()
+        .then((list) => {
+          const items = Array.isArray(list) ? list.slice(0, 4) : [];
+          setRequirements(
+            items.map((r) => ({
+              _id: String(r._id ?? ""),
+              material: String(r.material ?? ""),
+              quantity: String(r.quantity ?? ""),
+              location: String(r.location ?? ""),
+              description: r.description ? String(r.description) : undefined,
+              createdAt: r.createdAt ? String(r.createdAt) : undefined,
+            }))
+          );
+        })
+        .catch(() => setRequirements([]));
+    };
+    load();
+    window.addEventListener("bc-requirement-posted", load);
+    return () => window.removeEventListener("bc-requirement-posted", load);
+  }, [isAuthenticated]);
 
-  const featuredMaterials = [
-    {
-      id: "cement-cimerwa",
-      title: "CIMERWA 32.5N Cement",
-      price: 12500,
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCE67LnqKl_EWebcOgmZFsGOv_HO2gzYM9BBr-bcG-ki8dtD3CMgzZzPB0S46FEPUuz1CcFhvpKzLB8QDDYyaTp5-LmLLPGQf4wuuSbCHNMz0r8UuGqY2LYiu1i7YPFlHW5k42Z1RAs151787Sj6apji1WBysvn6rqldnakAri-ZHP5K6tqH_1leiGu-bxojBKtchCVetUHyZTUh-_yUGBV6DMY1lVgs7aZYKgec2-zeuVUh6hoccBjAJ4cSg4X1i_OlOxeza3N9ec",
-      category: "Cement",
-      supplier: "Kigali City Hardware",
-      badge: "BEST SELLER",
-      stock: "IN STOCK",
-    },
-    {
-      id: "roofing-blue",
-      title: "Blue Matte Iron Sheets",
-      price: 8200,
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDj6ZSG2PpgoaP3axFvAHmeH3DnYNSS0mtENdtTGoQ25Nv8PXqR-xBJ1sHRBoejZWsEjV-n-wR2CfnR0aXTWfPpxnjHQxjtIMU2LQZt02gDPZ4cHNwyFwAlFZceIXjhqR22N12f1ZMj37XpLvIm2beREOqOQG08jDELsD-Ltkwerk1QLQSkIhvTbs0qGkPnc7x-4KkJVUcjjjozjXcEv2XSqg4XBm6W9TGofWb1_4JShsG0Lrhge3yL6YIofuiaVcKS0VBTLlW-T38",
-      category: "Roofing",
-      supplier: "Rubavu Builders Ltd",
-      badge: null,
-      stock: "IN STOCK",
-    },
-    {
-      id: "wire-copper",
-      title: "2.5mm Copper House Wire",
-      price: 45000,
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuACcP_6KklRsZiU-Z2yxpXf8nIVIsk7W7dWcdi-q7Kb6DRnlfRaVDk9Xye_gyWgLCJv3qXHi5uCOZWvm0AdbgevrFLr5flRh1xYwtkK2LTfveCQpf5nG4Sm5aVrYKqjxdCBsbA4osHXZEK5KfDjPebV4eccElAdFJWH_pQyy_JA0QcIdaB5_rGD646X1RnYXOxfRHtjSlnMSqnItuW5fRth9U1WI542iym3WFAIeV8yGlP6buswlVEWMFYoDgS2bIIsdAYAFSvolCA",
-      category: "Electrical",
-      supplier: "Gikondo Electricals",
-      badge: null,
-      stock: "LOW STOCK",
-    },
-    {
-      id: "tiles-gres",
-      title: "Gres Porcelain Tiles 60x60",
-      price: 18500,
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuC3sRA03IQ_pXidlR7GBtjxzQZ-lcHStgJgEJ-oOEp4GjOPalpzlegHhmpa-52zfVqlPPIGV4OQ13qqVNGreD59CqXdCyX9WaAyGLEDvJ4BYOl3fyqaqhs0lroft5NGp97kR23LhsDWC8w5_CtfBEF9zH6E6lCNEwREMZ7XKxgWIHe4B_wFJUpdov3zkMm_AcXLDlPs1sr83FrPBWGW2C0mcEdu460hNhjHcDNKO18dQaJ2wR-nOtVWm_b0Qrz9Mw8Ct_or7xWg3DA",
-      category: "Finishing",
-      supplier: "Kigali City Hardware",
-      badge: null,
-      stock: "IN STOCK",
-    },
-  ];
+  const categories = apiCategories.length
+    ? apiCategories.slice(0, 6).map((c) => ({
+        name: c.name,
+        icon: CATEGORY_ICONS[c.slug] || "category",
+        tag: c.slug,
+      }))
+    : [
+        { name: "Cement", icon: "precision_manufacturing", tag: "cement" },
+        { name: "Roofing", icon: "architecture", tag: "roofing" },
+        { name: "Plumbing", icon: "plumbing", tag: "plumbing" },
+        { name: "Electrical", icon: "electric_bolt", tag: "electrical" },
+        { name: "Steel", icon: "construction", tag: "steel" },
+        { name: "Tools", icon: "build", tag: "tools" },
+      ];
 
-  const trustedSuppliers = [
-    {
-      name: "Kigali City Hardware",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBbWHhpz9jSOaIN4fP2JrytDm6R3YcyvDo0Km2_pIX4KmY61HwTAWdnGDfdrGl5alEsI4i_p5fsmmdrXCfIncWL60TdkYP0FQ20eZDvf6Pta6W1eJUZp-XbXu7DEJrpPM7WZVDUH-ZRmxBSCCLipSQfqMK9SA2NDfeVLIxWeleCXl0EG7BY60bdufudvNXu_rRCrhPSAY8H_yD2mpKBF52FhzVCo4eQpL1yTwSfLZTzep8unO50MGTrcsFRRRqsMW-NHtImx7qyrLQ",
-      location: "Nyarugenge, Kigali",
-      rating: "4.9",
-      tags: ["Cement", "Plumbing"],
-    },
-    {
-      name: "Rubavu Builders Ltd",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuC-3zN43Zyln-2x_P2OvJsLOPxSJr41SOSj8Bqpip4hmJqKLbDyNgRdAYDWTWzhPSMec73hxa3yFuHdSr5NOtP3aOXJrdloKaukIkxhxV_0VOBDuEWhoj3cviMnMP1wjuwwbhcWzuvfsifJbvZ2aJzn3_-wxr9fwBhyOyuP-cNyAdeadDKJ2evIPJ96isN3_VPMNHFrDU5DYlZFa2BbnphbuZLG0ZeiasYrQ5Tux8NxDiNdirSJAJMBMSK2tBcdttEJw8bgenKpNf8",
-      location: "Rubavu, Western Province",
-      rating: "4.7",
-      tags: ["Steel", "Tools"],
-    },
-    {
-      name: "Gikondo Electricals",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBE-EVp1ehE3if_ppphzYK0iw2Bxttnf5CJDh8RlPI_26eyG5try5eVXN6WR-4rTjRQaZs07NEqzKuM687pAlnuoGeTmwjxa9mjeqt6vXEjz1dLnsnttKcseCoIX_4xAV9He_8RLe5miP6ZWO81mvODovgbmKCPXD1E0FTCIdLBfE4QyFSLlQGx_2Ncs9g1qVp5_tICiNFSIy7V0WgqjdE2TahDj7lwGzZMFNAtK4CfbQq1K8I42uzO78rDANSdWl-1x6gHB4v6E54",
-      location: "Kicukiro, Kigali",
-      rating: "4.8",
-      tags: ["Electrical", "Safety"],
-    },
-  ];
+  const trustedSuppliers = (vendorsData?.data ?? []).slice(0, 3);
 
   return (
     <div className="animate-in fade-in duration-300">
@@ -137,7 +129,7 @@ export default function LandingPage() {
             </div>
             <button
               type="submit"
-              className="bg-tertiary-container text-on-tertiary-container hover:bg-tertiary hover:text-white transition-all px-8 py-3.5 rounded-xl font-label-bold text-sm uppercase tracking-wider active:scale-95 duration-100"
+              className="bg-tertiary-container text-on-tertiary-container hover:bg-tertiary hover:text-white transition-all px-8 py-3.5 rounded-xl font-label-bold text-sm active:scale-95 duration-100"
             >
               Search
             </button>
@@ -154,9 +146,9 @@ export default function LandingPage() {
           </div>
           <Link
             href="/marketplace"
-            className="text-tertiary hover:text-tertiary/80 transition-colors font-label-bold flex items-center gap-1 group"
+            className="text-tertiary hover:text-tertiary/80 hover:underline transition-colors font-label-bold flex items-center gap-1 group cursor-pointer"
           >
-            VIEW ALL{" "}
+            View all{" "}
             <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
               chevron_right
             </span>
@@ -185,56 +177,125 @@ export default function LandingPage() {
           <div className="flex gap-2">
             <Link
               href="/marketplace"
-              className="px-6 py-2.5 border border-outline-variant/50 rounded-xl font-label-bold text-primary hover:bg-surface-container transition-colors uppercase tracking-wider text-xs"
+              className="px-6 py-2.5 border border-outline-variant/50 rounded-xl font-label-bold text-primary hover:bg-surface-container hover:border-primary/30 transition-colors text-xs cursor-pointer"
             >
-              Go to Marketplace
+              Go to marketplace
             </Link>
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-          {featuredMaterials.map((prod) => (
-            <div key={prod.id} className="bg-white rounded-2xl shadow-sm border border-outline-variant/20 overflow-hidden group flex flex-col hover:shadow-md transition-all duration-300">
-              <div className="relative h-48 bg-surface-container-low overflow-hidden">
-                <Link href={`/marketplace/product/${prod.id}`}>
-                  <img
-                    alt={prod.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer"
-                    src={prod.image}
-                  />
-                </Link>
-                {prod.badge && (
-                  <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-[9px] font-bold tracking-wider text-tertiary">
-                    {prod.badge}
-                  </div>
-                )}
-              </div>
-              <div className="p-4 flex flex-col flex-1">
-                <p className="text-on-surface-variant text-[11px] font-label-bold uppercase tracking-wider">
-                  {prod.category}
-                </p>
-                <Link href={`/marketplace/product/${prod.id}`}>
-                  <h3 className="font-headline-md text-body-lg text-primary mt-1 hover:text-tertiary transition-colors cursor-pointer line-clamp-1 font-bold">
-                    {prod.title}
-                  </h3>
-                </Link>
-                <p className="text-xs text-outline mt-0.5">By {prod.supplier}</p>
-                <div className="flex items-center justify-between mt-4">
-                  <span className="font-headline-md text-primary font-bold">{prod.price.toLocaleString()} RWF</span>
-                  <div className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md text-[10px] font-bold">
-                    {prod.stock}
-                  </div>
-                </div>
-                <button
-                  onClick={() => addToCart(prod)}
-                  className="w-full mt-4 py-2.5 border border-primary text-primary rounded-xl font-label-bold text-xs uppercase tracking-wider hover:bg-primary hover:text-white transition-all active:scale-95 duration-100"
-                >
-                  ADD TO CART
-                </button>
-              </div>
+          {featuredLoading ? (
+            <div className="col-span-full flex justify-center py-12">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary" />
             </div>
-          ))}
+          ) : featuredProducts.length === 0 ? (
+            <p className="col-span-full text-center text-on-surface-variant py-8">
+              Start the API and run npm run seed to see featured products.
+            </p>
+          ) : (
+            featuredProducts.map((prod) => (
+              <div
+                key={prod._id}
+                className="bg-white rounded-2xl shadow-sm border border-outline-variant/20 overflow-hidden group flex flex-col hover:shadow-md transition-all duration-300"
+              >
+                <div className="relative h-48 bg-surface-container-low overflow-hidden">
+                  <Link href={`/marketplace/product/${prod._id}`}>
+                    <img
+                      alt={prod.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer"
+                      src={productImage(prod)}
+                    />
+                  </Link>
+                  {prod.featured && (
+                    <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-[9px] font-bold tracking-wider text-tertiary">
+                      FEATURED
+                    </div>
+                  )}
+                </div>
+                <div className="p-4 flex flex-col flex-1">
+                  <p className="text-on-surface-variant text-[11px] font-label-bold uppercase tracking-wider">
+                    {categoryName(prod.category as never)}
+                  </p>
+                  <Link href={`/marketplace/product/${prod._id}`}>
+                    <h3 className="font-headline-md text-body-lg text-primary mt-1 hover:text-tertiary transition-colors cursor-pointer line-clamp-1 font-bold">
+                      {prod.name}
+                    </h3>
+                  </Link>
+                  <p className="text-xs text-outline mt-0.5">By {vendorName(prod.vendor as never)}</p>
+                  <div className="flex items-center justify-between mt-4">
+                    <span className="font-headline-md text-primary font-bold">
+                      {productPrice(prod).toLocaleString()} RWF
+                    </span>
+                    <div className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                      {prod.stock > 10 ? "IN STOCK" : prod.stock > 0 ? "LOW STOCK" : "OUT OF STOCK"}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      addToCart({
+                        id: prod._id,
+                        productId: prod._id,
+                        title: prod.name,
+                        price: productPrice(prod),
+                        image: productImage(prod),
+                        category: categoryName(prod.category as never),
+                        supplier: vendorName(prod.vendor as never),
+                      })
+                    }
+                    className="w-full mt-4 py-2.5 border border-primary text-primary rounded-xl font-label-bold text-xs hover:bg-primary hover:text-white transition-all active:scale-95 duration-100 cursor-pointer"
+                  >
+                    Add to cart
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </section>
+
+      {/* Posted requirements */}
+      {isAuthenticated && requirements.length > 0 && (
+        <section className="py-xl px-margin-mobile md:px-margin-desktop bg-surface-container-low">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h2 className="font-headline-md text-headline-md text-primary">Your Posted Requirements</h2>
+              <p className="text-on-surface-variant text-body-sm mt-1">Recent quote requests sent to suppliers</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowPostRequirementModal(true)}
+              className="text-tertiary font-label-bold text-xs hover:underline"
+            >
+              Post new
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {requirements.map((req) => (
+              <div
+                key={req._id}
+                className="bg-white rounded-2xl overflow-hidden border border-outline-variant/20 shadow-sm hover:shadow-md transition-all"
+              >
+                <div className="h-36 overflow-hidden">
+                  <img
+                    src={resolveMaterialImage(req.material)}
+                    alt={req.material}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="p-4">
+                  <h3 className="font-bold text-primary text-sm line-clamp-1">{req.material}</h3>
+                  <p className="text-xs text-on-surface-variant mt-1">{req.quantity}</p>
+                  <p className="text-xs text-tertiary font-bold mt-2 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">location_on</span>
+                    {req.location}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* How it Works (Bento Layout) */}
       <section className="py-xl px-margin-mobile md:px-margin-desktop bg-primary text-white overflow-hidden">
@@ -243,12 +304,12 @@ export default function LandingPage() {
             <h2 className="font-headline-md text-headline-lg-mobile md:text-headline-lg mb-4 text-3xl">
               Streamlining Rwanda's Construction
             </h2>
-            <p className="text-primary-fixed-dim font-body-md max-w-xl mx-auto">
+            <p className="text-primary-fixed-dim font-body-md text-body-md max-w-[36rem] mx-auto text-center leading-relaxed">
               Our end-to-end logistics and escrow billing ensure your site never stops moving.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl border border-white/10 relative group overflow-hidden">
+            <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl border border-white/10 relative group overflow-hidden hover:bg-white/15 hover:border-white/20 transition-colors">
               <div className="absolute -top-10 -right-10 w-32 h-32 bg-tertiary/20 rounded-full blur-2xl group-hover:bg-tertiary/40 transition-colors"></div>
               <div className="text-tertiary-fixed font-headline-xl text-5xl mb-4 opacity-80">01</div>
               <h3 className="font-headline-md text-xl mb-3 text-white">Intelligent Search</h3>
@@ -259,7 +320,7 @@ export default function LandingPage() {
               <span className="material-symbols-outlined mt-8 text-4xl opacity-50 block">search_insights</span>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl border border-white/10 relative group overflow-hidden">
+            <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl border border-white/10 relative group overflow-hidden hover:bg-white/15 hover:border-white/20 transition-colors">
               <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary-fixed/10 rounded-full blur-2xl"></div>
               <div className="text-tertiary-fixed font-headline-xl text-5xl mb-4 opacity-80">02</div>
               <h3 className="font-headline-md text-xl mb-3 text-white">Secure Ordering</h3>
@@ -270,7 +331,7 @@ export default function LandingPage() {
               <span className="material-symbols-outlined mt-8 text-4xl opacity-50 block">verified_user</span>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl border border-white/10 relative group overflow-hidden">
+            <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl border border-white/10 relative group overflow-hidden hover:bg-white/15 hover:border-white/20 transition-colors">
               <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl"></div>
               <div className="text-tertiary-fixed font-headline-xl text-5xl mb-4 opacity-80">03</div>
               <h3 className="font-headline-md text-xl mb-3 text-white">Real-time Tracking</h3>
@@ -290,38 +351,52 @@ export default function LandingPage() {
           <h2 className="font-headline-md text-headline-md text-primary">Trusted Suppliers</h2>
           <Link
             href="/vendor"
-            className="bg-white px-5 py-2.5 rounded-xl border border-outline-variant font-label-bold text-primary hover:bg-surface-container-low transition-all text-xs uppercase tracking-wider active:scale-95 duration-100"
+            className="bg-white px-5 py-2.5 rounded-xl border border-outline-variant font-label-bold text-primary hover:bg-surface-container-low hover:border-primary/30 transition-all text-xs active:scale-95 duration-100 cursor-pointer"
           >
-            BECOME A VENDOR
+            Become a vendor
           </Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {trustedSuppliers.map((supp) => (
-            <div key={supp.name} className="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/30 flex items-start gap-5 hover:shadow-md transition-all">
-              <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container">
-                <img alt={supp.name} className="w-full h-full object-cover" src={supp.image} />
-              </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-center">
-                  <h4 className="font-headline-md text-body-lg text-primary font-bold">{supp.name}</h4>
-                  <div className="flex items-center gap-1 text-tertiary">
-                    <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      star
+          {trustedSuppliers.length === 0 ? (
+            <p className="col-span-full text-center text-on-surface-variant">
+              Verified suppliers appear here once the API is seeded.
+            </p>
+          ) : (
+            trustedSuppliers.map((supp) => (
+              <Link
+                key={supp._id}
+                href={`/stores/${supp._id}`}
+                className="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/30 flex items-start gap-5 hover:shadow-md transition-all cursor-pointer"
+              >
+                <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container">
+                  <img
+                    alt={supp.storeName}
+                    className="w-full h-full object-cover"
+                    src={vendorLogoImage(supp)}
+                  />
+                </div>
+                <div className="flex-1">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-label-bold text-primary text-sm">{supp.storeName}</h3>
+                    <span className="text-tertiary font-bold text-xs flex items-center gap-0.5">
+                      <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>
+                        star
+                      </span>
+                      {supp.averageRating}
                     </span>
-                    <span className="font-label-bold text-xs">{supp.rating}</span>
                   </div>
-                </div>
-                <p className="text-on-surface-variant text-xs mt-1">{supp.location}</p>
-                <div className="flex gap-2 mt-4">
-                  {supp.tags.map((tag) => (
-                    <span key={tag} className="px-2 py-0.5 bg-surface-container rounded text-[9px] font-bold text-on-surface-variant uppercase tracking-wider">
-                      {tag}
+                  <p className="text-on-surface-variant text-xs mt-1">
+                    {supp.district}, {supp.city}
+                  </p>
+                  {supp.isVerified && (
+                    <span className="inline-block mt-2 text-[10px] font-bold uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                      Verified
                     </span>
-                  ))}
+                  )}
                 </div>
-              </div>
-            </div>
-          ))}
+              </Link>
+            ))
+          )}
         </div>
       </section>
 

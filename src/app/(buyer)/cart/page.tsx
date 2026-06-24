@@ -1,16 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import { useRouter } from "next/navigation";
 
 export default function ShoppingCart() {
-  const { cart, updateCartQuantity, removeFromCart, clearCart } = useApp();
+  const { cart, updateCartQuantity, removeFromCart, clearCart, refreshCart, cartLoading } = useApp();
   const router = useRouter();
   const [promoCode, setPromoCode] = useState("");
   const [discountApplied, setDiscountApplied] = useState(false);
   const [promoError, setPromoError] = useState("");
+
+  useEffect(() => {
+    void refreshCart();
+  }, [refreshCart]);
 
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const deliveryFee = subtotal > 0 ? 15000 : 0;
@@ -48,17 +52,23 @@ export default function ShoppingCart() {
 
             {cart.length === 0 ? (
               <div className="bg-white rounded-2xl p-12 text-center border border-outline-variant/20 flex flex-col items-center justify-center">
+                {cartLoading ? (
+                  <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary" />
+                ) : (
+                  <>
                 <span className="material-symbols-outlined text-6xl text-outline/30 mb-4">shopping_cart_off</span>
                 <h3 className="font-headline-md text-headline-md text-primary mb-2">Your Cart is Empty</h3>
-                <p className="text-on-surface-variant text-body-sm max-w-sm">
+                <p className="text-on-surface-variant text-body-sm max-w-[24rem] leading-relaxed">
                   You haven't added any construction materials to your cart yet. Explore the marketplace to find what you need.
                 </p>
                 <Link
                   href="/marketplace"
-                  className="mt-6 px-6 py-3 bg-primary text-on-primary hover:bg-primary/95 transition-all rounded-xl font-label-bold text-xs uppercase tracking-wider active:scale-95 duration-100"
-                >
-                  Browse Marketplace
+                  className="mt-6 px-6 py-3 bg-primary text-on-primary hover:bg-primary/95 transition-all rounded-xl font-label-bold text-xs active:scale-95 duration-100"
+                  >
+                  Browse marketplace
                 </Link>
+                  </>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
@@ -183,9 +193,9 @@ export default function ShoppingCart() {
                   {/* CTA Button */}
                   <button
                     onClick={handleCheckout}
-                    className="w-full bg-tertiary text-on-tertiary font-label-bold py-4 rounded-xl shadow-lg hover:shadow-xl hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group duration-100 uppercase tracking-wider text-xs"
+                    className="w-full bg-tertiary text-on-tertiary font-label-bold py-4 rounded-xl shadow-lg hover:shadow-xl hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group duration-100 text-xs"
                   >
-                    PROCEED TO CHECKOUT
+                    Proceed to checkout
                     <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
                       chevron_right
                     </span>

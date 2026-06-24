@@ -61,46 +61,59 @@
   --spacing-md: 24px;
   --spacing-pb-safe: calc(env(safe-area-inset-bottom, 0px) + 8px);
 
-  /* Containers (restoring standard max-w sizes to avoid spacing conflicts) */
-  --container-xs: 20rem;
-  --container-sm: 24rem;
-  --container-md: 28rem;
-  --container-lg: 32rem;
-  --container-xl: 36rem;
-  --container-2xl: 42rem;
-  --container-3xl: 48rem;
-  --container-4xl: 56rem;
-  --container-5xl: 64rem;
-  --container-6xl: 72rem;
-  --container-7xl: 80rem;
+  /* Width scale for max-w-* (must NOT use spacing tokens — spacing-md is 24px) */
+  --width-xs: 20rem;
+  --width-sm: 24rem;
+  --width-md: 28rem;
+  --width-lg: 32rem;
+  --width-xl: 36rem;
+  --width-2xl: 42rem;
+  --width-3xl: 48rem;
+  --width-4xl: 56rem;
+  --width-5xl: 64rem;
+  --width-6xl: 72rem;
+  --width-7xl: 80rem;
+
+  /* Max-width utilities — explicit rem values so max-w-md ≠ spacing-md (24px) */
+  --max-width-xs: 20rem;
+  --max-width-sm: 24rem;
+  --max-width-md: 28rem;
+  --max-width-lg: 32rem;
+  --max-width-xl: 36rem;
+  --max-width-2xl: 42rem;
+  --max-width-3xl: 48rem;
+  --max-width-4xl: 56rem;
+  --max-width-5xl: 64rem;
+  --max-width-6xl: 72rem;
+  --max-width-7xl: 80rem;
 }
 
-/* Font Families & Sizes Custom Utilities */
-@utility font-headline-md { font-family: var(--font-hanken-grotesk), sans-serif; font-weight: 600; }
+/* Font Families & Sizes — Outfit only */
+@utility font-headline-md { font-family: var(--font-outfit), sans-serif; font-weight: 600; }
 @utility text-headline-md { font-size: 24px; line-height: 32px; }
 
-@utility font-headline-lg { font-family: var(--font-hanken-grotesk), sans-serif; font-weight: 700; }
+@utility font-headline-lg { font-family: var(--font-outfit), sans-serif; font-weight: 700; }
 @utility text-headline-lg { font-size: 32px; line-height: 40px; letter-spacing: -0.01em; }
 
-@utility font-label-bold { font-family: var(--font-inter), sans-serif; font-weight: 700; }
+@utility font-label-bold { font-family: var(--font-outfit), sans-serif; font-weight: 700; }
 @utility text-label-bold { font-size: 12px; line-height: 16px; letter-spacing: 0.05em; }
 
-@utility font-body-sm { font-family: var(--font-inter), sans-serif; font-weight: 400; }
+@utility font-body-sm { font-family: var(--font-outfit), sans-serif; font-weight: 400; }
 @utility text-body-sm { font-size: 14px; line-height: 20px; }
 
-@utility font-headline-lg-mobile { font-family: var(--font-hanken-grotesk), sans-serif; font-weight: 700; }
+@utility font-headline-lg-mobile { font-family: var(--font-outfit), sans-serif; font-weight: 700; }
 @utility text-headline-lg-mobile { font-size: 28px; line-height: 36px; }
 
-@utility font-body-lg { font-family: var(--font-inter), sans-serif; font-weight: 400; }
+@utility font-body-lg { font-family: var(--font-outfit), sans-serif; font-weight: 400; }
 @utility text-body-lg { font-size: 18px; line-height: 28px; }
 
-@utility font-body-md { font-family: var(--font-inter), sans-serif; font-weight: 400; }
+@utility font-body-md { font-family: var(--font-outfit), sans-serif; font-weight: 400; }
 @utility text-body-md { font-size: 16px; line-height: 24px; }
 
-@utility font-headline-xl { font-family: var(--font-hanken-grotesk), sans-serif; font-weight: 800; }
+@utility font-headline-xl { font-family: var(--font-outfit), sans-serif; font-weight: 800; }
 @utility text-headline-xl { font-size: 48px; line-height: 56px; letter-spacing: -0.02em; }
 
-@utility font-label-md { font-family: var(--font-inter), sans-serif; font-weight: 500; }
+@utility font-label-md { font-family: var(--font-outfit), sans-serif; font-weight: 500; }
 @utility text-label-md { font-size: 12px; line-height: 16px; }
 
 /* Custom Scrollbar and helper resets */
@@ -115,4 +128,46 @@
 body {
   min-height: 100vh;
   min-height: 100dvh;
+  font-family: var(--font-outfit), sans-serif;
+}
+
+/* Interactive elements — pointer + hover transitions */
+@layer base {
+  a[href],
+  button:not(:disabled),
+  [type="button"]:not(:disabled),
+  [type="submit"]:not(:disabled),
+  [type="reset"]:not(:disabled),
+  summary,
+  label[for],
+  select,
+  [role="button"],
+  [role="link"] {
+    cursor: pointer;
+  }
+
+  a[href]:hover,
+  button:not(:disabled):hover,
+  [role="button"]:hover {
+    transition-property: color, background-color, border-color, opacity, transform, box-shadow;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+  textarea {
+    cursor: text;
+  }
+}
+
+@utility interactive {
+  cursor: pointer;
+  transition-property: color, background-color, border-color, opacity, transform, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

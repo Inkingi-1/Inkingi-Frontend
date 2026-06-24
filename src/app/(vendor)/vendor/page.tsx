@@ -1,51 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-
-interface DashboardProduct {
-  name: string;
-  price: number;
-  unit: string;
-  image: string;
-  status: "In Stock" | "Low Stock" | "Out of Stock";
-  statusColor: string;
-}
-
-const DASHBOARD_PRODUCTS: DashboardProduct[] = [
-  {
-    name: "Steel Rebar 12mm",
-    price: 12500,
-    unit: "Unit",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCUR_lw39b7sixKPYZpOnkQxx4l6WsY0kLuo-iQzSP5CZvBxrIzDTH3WxpASjAA4u5XvXYtqC5nCekAVNW1S_5wxW8ANIHndG-4FMV3X4v2rq_-p8fAhTc1SRhXVzVNMn4nf5Kg3GD7-wH4u8-ytc0zyJFBlI8TjjiJlo4GMw4dve33OcOtIih3jbJlmWkiJzPabpSSBRxv_sXOQHs8UkphK-4RRVGhqNmz1Ggs-t6scSQeAA8Cj--j3BkiBF6fIOSJaZqATl59WCk",
-    status: "In Stock",
-    statusColor: "bg-emerald-100 text-emerald-800",
-  },
-  {
-    name: "Industrial Safety Pack",
-    price: 45000,
-    unit: "Set",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuClTYTGgYeHPBSq7H5m08zG0CwI5YQn0w7wRhQQSAMqu8M_CxAvP1CqeWx80umhDJUfNs56FJie8GYJmD9i64hnD2-cxGrWv7Y5QBg63oPbFaNSYfF3S9KQmVhdGPO9Gxn-u-NvbZOFYCur3c8QrNeYxOWVlCAnlIRFsdZ1yS3Imf92-vxpzQgFsooiddR0mi4YdnCk3EP3i2BlHNPHvF4IymlyVI2H6hznwyVpfMzdWAYryB58GbLxGRrahxRJa4USKBb747gXMQA",
-    status: "In Stock",
-    statusColor: "bg-emerald-100 text-emerald-800",
-  },
-  {
-    name: "OPC Cement 50kg",
-    price: 9800,
-    unit: "Bag",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBN_Q7GHNnxBa7EXHdz5BLKGPeUFTbjxJNrtkAK8QsCyhbjmTfq1BcPnl4jD_X1ahJLnhI4TdZohBMyecFTok5lmHQ2EuMW_ypt02YMua6AhHaLEjneiM88_JVXf3mDCcpmGWIN4NhDmiVXPuPRLM4oTPOjrcsdQYZc8WNysJ29g5Dtge_YNgDmX2be-dNqTgXjw-iBjkQciJlDiMSltL8yn1940xpeE-rP-dlSlxauxQHPe71U7K2oP2alzDxBURWNIE8qVnBvFLw",
-    status: "Low Stock",
-    statusColor: "bg-amber-100 text-amber-800",
-  },
-  {
-    name: "Laser Leveler Pro",
-    price: 120000,
-    unit: "Unit",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuANzWDfM2MExboRcsgyasMR5-pJNxvbH0ZZmElxm0FH9b1ZvT7edB1o9tcdGFM-W7RcQ-1SW_iqS4l0xGtwgpgjpEuhdFNS1DjPlWmG1ueZoiAzA142e467p9zc00hEyOQj2dqaG5T3q5p1Vjc04MqEAPj2EHHlv-KtQNM0RoenvMnHQy4k_wyO8ure5ACiDuQXPGnm7K_D87KgDucdGYnkOCZ2FK0934qLphnnc16LQJSjIprXFsy8BsImPxTZzDxGqJJHI8xX4tw",
-    status: "In Stock",
-    statusColor: "bg-emerald-100 text-emerald-800",
-  },
-];
+import { PortalAuth } from "@/components/PortalAuth";
+import { vendorsApi, productImage, productPrice } from "@/lib/api";
+import { ApiProduct, ApiVendor } from "@/lib/api/types";
 
 interface Review {
   author: string;
@@ -59,19 +18,45 @@ const RECENT_REVIEWS: Review[] = [
     author: "Jean-Luc Karangwa",
     time: "2 hours ago",
     rating: 5,
-    comment: "Exceptional quality on the steel reinforcements. Delivery was right on time at the site in Gasabo. Highly recommended!",
+    comment:
+      "Exceptional quality on the steel reinforcements. Delivery was right on time at the site in Gasabo. Highly recommended!",
   },
   {
     author: "Marie Uwase",
     time: "Yesterday",
     rating: 4,
-    comment: "Great selection of tools. One bag of cement was slightly torn during offloading, but the team replaced it immediately.",
+    comment:
+      "Great selection of tools. One bag of cement was slightly torn during offloading, but the team replaced it immediately.",
   },
 ];
+
+function stockStatus(product: ApiProduct) {
+  if (product.stock <= 0) return { label: "Out of Stock", color: "bg-red-100 text-red-800" };
+  if (product.stock < 10) return { label: "Low Stock", color: "bg-amber-100 text-amber-800" };
+  return { label: "In Stock", color: "bg-emerald-100 text-emerald-800" };
+}
 
 export default function VendorDashboardPage() {
   const [showNotification, setShowNotification] = useState(false);
   const [notifText, setNotifText] = useState("");
+  const [store, setStore] = useState<ApiVendor | null>(null);
+  const [products, setProducts] = useState<ApiProduct[]>([]);
+  const [stats, setStats] = useState({ earnings: 0, orders: 0, rating: 0 });
+
+  useEffect(() => {
+    Promise.all([vendorsApi.dashboard(), vendorsApi.myProducts()])
+      .then(([dash, prodResult]) => {
+        const s = dash.store as ApiVendor;
+        setStore(s);
+        setStats({
+          earnings: (dash.earnings as number) || 0,
+          orders: (dash.orders as number) || 0,
+          rating: (dash.rating as number) || 0,
+        });
+        setProducts(prodResult.data.slice(0, 4));
+      })
+      .catch(() => {});
+  }, []);
 
   const triggerActionNotification = (text: string) => {
     setNotifText(text);
@@ -83,6 +68,7 @@ export default function VendorDashboardPage() {
 
   return (
     <div className="w-full relative">
+      <PortalAuth requiredRole="vendor" />
       {/* Toast Notification */}
       {showNotification && (
         <div className="fixed top-6 right-6 z-[99] bg-primary text-on-primary px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-top-4 duration-300">
@@ -119,21 +105,19 @@ export default function VendorDashboardPage() {
           </div>
           <div className="mb-2">
             <h2 className="font-headline-xl text-headline-lg-mobile md:text-headline-xl text-white mb-1 drop-shadow-md font-bold">
-              Kigali Industrial Hub
+              {store?.storeName || "Your Store"}
             </h2>
             <div className="flex items-center gap-3 text-white/90">
               <span className="font-label-bold text-label-bold flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">location_on</span> Kigali, RW
+                <span className="material-symbols-outlined text-sm">location_on</span>
+                {store ? `${store.district}, ${store.city}` : "Kigali, RW"}
               </span>
               <span className="w-1 h-1 bg-white/40 rounded-full"></span>
               <span className="font-label-bold text-label-bold flex items-center gap-1">
-                <span
-                  className="material-symbols-outlined text-sm text-yellow-400"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
+                <span className="material-symbols-outlined text-sm text-yellow-400" style={{ fontVariationSettings: "'FILL' 1" }}>
                   star
-                </span>{" "}
-                4.8 (124 reviews)
+                </span>
+                {stats.rating || store?.averageRating || "—"} ({store?.reviewCount || 0} reviews)
               </span>
             </div>
           </div>
@@ -165,7 +149,7 @@ export default function VendorDashboardPage() {
               Total Products
             </p>
             <div className="flex items-end justify-between">
-              <h3 className="font-headline-lg text-headline-lg text-primary font-bold">1,248</h3>
+              <h3 className="font-headline-lg text-headline-lg text-primary font-bold">{products.length}</h3>
               <span className="text-green-600 font-label-bold text-label-bold flex items-center gap-1 bg-green-50 px-2 py-1 rounded">
                 <span className="material-symbols-outlined text-sm">trending_up</span> +12%
               </span>
@@ -177,7 +161,7 @@ export default function VendorDashboardPage() {
               Active Orders
             </p>
             <div className="flex items-end justify-between">
-              <h3 className="font-headline-lg text-headline-lg text-primary font-bold">42</h3>
+              <h3 className="font-headline-lg text-headline-lg text-primary font-bold">{stats.orders}</h3>
               <span className="text-tertiary font-label-bold text-label-bold flex items-center gap-1 bg-tertiary-fixed/30 px-2 py-1 rounded">
                 <span className="material-symbols-outlined text-sm">schedule</span> Pending
               </span>
@@ -189,7 +173,9 @@ export default function VendorDashboardPage() {
               Monthly Revenue
             </p>
             <div className="flex items-end justify-between">
-              <h3 className="font-headline-lg text-headline-lg text-primary font-bold">RWF 8.4M</h3>
+              <h3 className="font-headline-lg text-headline-lg text-primary font-bold">
+                RWF {(stats.earnings / 1_000_000).toFixed(1)}M
+              </h3>
               <span className="text-green-600 font-label-bold text-label-bold flex items-center gap-1 bg-green-50 px-2 py-1 rounded">
                 <span className="material-symbols-outlined text-sm">payments</span> Paid
               </span>
@@ -214,28 +200,31 @@ export default function VendorDashboardPage() {
             </Link>
           </div>
           <div className="p-6 grid grid-cols-2 lg:grid-cols-4 gap-4 flex-grow">
-            {DASHBOARD_PRODUCTS.map((prod, idx) => (
-              <div key={idx} className="group cursor-pointer">
-                <div className="aspect-square rounded-lg bg-surface-container overflow-hidden mb-3 relative">
-                  <img
-                    alt={prod.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    src={prod.image}
-                  />
-                  <span
-                    className={`absolute top-2 left-2 font-label-bold text-[10px] px-2 py-0.5 rounded uppercase ${prod.statusColor}`}
-                  >
-                    {prod.status}
-                  </span>
-                </div>
-                <h4 className="font-label-bold text-label-bold text-on-surface line-clamp-1">
-                  {prod.name}
-                </h4>
-                <p className="font-label-md text-label-md text-on-surface-variant">
-                  RWF {prod.price.toLocaleString()} / {prod.unit}
-                </p>
-              </div>
-            ))}
+            {products.length === 0 ? (
+              <p className="col-span-full text-on-surface-variant text-sm">No products yet. Add inventory from the manage page.</p>
+            ) : (
+              products.map((prod) => {
+                const st = stockStatus(prod);
+                return (
+                  <div key={prod._id} className="group cursor-pointer">
+                    <div className="aspect-square rounded-lg bg-surface-container overflow-hidden mb-3 relative">
+                      <img
+                        alt={prod.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        src={productImage(prod)}
+                      />
+                      <span className={`absolute top-2 left-2 font-label-bold text-[10px] px-2 py-0.5 rounded uppercase ${st.color}`}>
+                        {st.label}
+                      </span>
+                    </div>
+                    <h4 className="font-label-bold text-on-surface line-clamp-1">{prod.name}</h4>
+                    <p className="font-label-md text-on-surface-variant">
+                      RWF {productPrice(prod).toLocaleString()}
+                    </p>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 

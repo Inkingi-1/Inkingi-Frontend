@@ -1,24 +1,50 @@
 "use client";
 
 import React, { useState } from "react";
+import { PortalAuth } from "@/components/PortalAuth";
+import { vendorsApi } from "@/lib/api";
+import { buildVendorSalesReportPdf, downloadPdfBlob } from "@/lib/vendorPdfReport";
+import { ApiError } from "@/lib/api/client";
 
 export default function SalesAnalyticsPage() {
   const [reportDownloading, setReportDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
 
-  const handleDownloadReport = () => {
+  const handleDownloadReport = async () => {
     setReportDownloading(true);
-    setTimeout(() => {
-      setReportDownloading(false);
+    setDownloadError("");
+    try {
+      const [analytics, store] = await Promise.all([vendorsApi.analytics(), vendorsApi.getMe()]);
+      const chart = analytics.chartData as { labels?: string[]; revenue?: number[]; orders?: number[] } | undefined;
+      const blob = buildVendorSalesReportPdf({
+        storeName: store.storeName,
+        generatedAt: new Date().toLocaleString(),
+        totalEarnings: (analytics.totalEarnings as number) ?? 0,
+        totalOrders: (analytics.totalOrders as number) ?? 0,
+        averageRating: (analytics.averageRating as number) ?? 0,
+        reviewCount: (analytics.reviewCount as number) ?? 0,
+        chartLabels: chart?.labels ?? [],
+        revenueSeries: chart?.revenue ?? [],
+        ordersSeries: chart?.orders ?? [],
+      });
+      const safeName = store.storeName.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+      downloadPdfBlob(blob, `buildconnect-sales-report-${safeName}-${Date.now()}.pdf`);
       setDownloaded(true);
-      setTimeout(() => {
-        setDownloaded(false);
-      }, 2000);
-    }, 1500);
+      setTimeout(() => setDownloaded(false), 2500);
+    } catch (err) {
+      setDownloadError(err instanceof ApiError ? err.message : "Could not generate report");
+    } finally {
+      setReportDownloading(false);
+    }
   };
 
   return (
     <div className="w-full">
+      <PortalAuth requiredRole="vendor" />
+      {downloadError && (
+        <div className="mb-4 bg-error-container text-on-error-container p-3 rounded-xl text-sm">{downloadError}</div>
+      )}
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
@@ -47,7 +73,7 @@ export default function SalesAnalyticsPage() {
             ) : (
               <>
                 <span className="material-symbols-outlined text-sm">download</span>
-                Download Reports
+                Download report (PDF)
               </>
             )}
           </button>

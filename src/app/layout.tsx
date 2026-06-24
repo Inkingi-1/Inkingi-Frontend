@@ -1,19 +1,17 @@
 import type { Metadata } from "next";
-import { Hanken_Grotesk, Inter } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 import PWARegister from "@/components/PWARegister";
 import { AppProvider } from "@/context/AppContext";
+import { AuthProvider } from "@/context/AuthContext";
 import RoleSwitcher from "@/components/RoleSwitcher";
 import PostRequirementModal from "@/components/PostRequirementModal";
+import CartToast from "@/components/CartToast";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import ClientBootstrap from "@/components/ClientBootstrap";
 
-const hankenGrotesk = Hanken_Grotesk({
-  variable: "--font-hanken-grotesk",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const inter = Inter({
-  variable: "--font-inter",
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
   display: "swap",
 });
@@ -30,10 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${hankenGrotesk.variable} ${inter.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${outfit.variable} h-full antialiased`}>
       <head>
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
@@ -44,12 +39,18 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="min-h-full flex flex-col bg-surface text-on-surface font-body-md">
-        <AppProvider>
-          <PWARegister />
-          <RoleSwitcher />
-          <PostRequirementModal />
-          {children}
-        </AppProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <AppProvider>
+              <ClientBootstrap />
+              <PWARegister />
+              <RoleSwitcher />
+              <PostRequirementModal />
+              <CartToast />
+              <main className="flex-1 w-full min-w-0">{children}</main>
+            </AppProvider>
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

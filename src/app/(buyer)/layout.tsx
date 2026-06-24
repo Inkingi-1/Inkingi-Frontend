@@ -4,10 +4,12 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 
 export default function BuyerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { cart, notificationCount, setShowPostRequirementModal } = useApp();
+  const { isAuthenticated, user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const cartItemsCount = cart.reduce((acc, item) => acc + item.quantity, 0);
@@ -26,7 +28,7 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden text-primary focus:outline-none"
+            className="lg:hidden text-primary focus:outline-none hover:bg-surface-container rounded-full p-1 transition-colors"
           >
             <span className="material-symbols-outlined text-3xl">menu</span>
           </button>
@@ -58,14 +60,18 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
         {/* Toolbar Controls */}
         <div className="flex items-center gap-4">
           {/* Notifications */}
-          <button className="p-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-full relative">
+          <Link
+            href="/notifications"
+            aria-label="View notifications"
+            className="p-2 text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors rounded-full relative cursor-pointer"
+          >
             <span className="material-symbols-outlined">notifications</span>
             {notificationCount > 0 && (
               <span className="absolute top-1 right-1 w-4 h-4 bg-error text-on-error rounded-full text-[9px] font-bold flex items-center justify-center">
                 {notificationCount}
               </span>
             )}
-          </button>
+          </Link>
 
           {/* Shopping Cart */}
           <Link href="/cart" className="p-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-full relative">
@@ -78,12 +84,34 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
           </Link>
 
           {/* Post Requirement Button */}
-          <div className="hidden md:block">
-            <button 
+          <div className="hidden md:flex items-center gap-3">
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-on-surface-variant hidden lg:inline">
+                  {user?.fullName?.split(" ")[0]}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => logout()}
+                  className="px-4 py-2 border border-outline-variant/50 rounded-lg text-xs font-bold hover:bg-surface-container transition-colors cursor-pointer"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="px-4 py-2 border border-primary text-primary rounded-lg text-xs font-bold hover:bg-primary hover:text-on-primary transition-colors"
+              >
+                Login
+              </Link>
+            )}
+            <button
+              type="button"
               onClick={() => setShowPostRequirementModal(true)}
-              className="bg-primary text-on-primary hover:bg-primary/95 px-6 py-2 rounded-lg font-label-bold transition-all active:scale-95 duration-150 uppercase tracking-wider"
+              className="bg-primary text-on-primary hover:bg-primary/95 px-6 py-2 rounded-lg font-label-bold transition-all active:scale-95 duration-150 cursor-pointer"
             >
-              POST REQUIREMENT
+              Post requirement
             </button>
           </div>
         </div>
@@ -94,14 +122,18 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
         <div className="lg:hidden fixed inset-0 z-[100] flex animate-in fade-in duration-200">
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-on-background/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-on-background/60 backdrop-blur-sm cursor-pointer"
             onClick={() => setMobileMenuOpen(false)}
+            role="button"
+            tabIndex={0}
+            aria-label="Close menu"
+            onKeyDown={(e) => e.key === "Escape" && setMobileMenuOpen(false)}
           />
           {/* Drawer content */}
           <div className="relative flex flex-col w-[280px] bg-white h-full py-8 px-6 shadow-2xl animate-in slide-in-from-left duration-200">
             <div className="flex justify-between items-center mb-8">
               <span className="font-headline-md text-headline-md text-primary tracking-tight">BuildConnect</span>
-              <button onClick={() => setMobileMenuOpen(false)} className="text-primary">
+              <button onClick={() => setMobileMenuOpen(false)} className="text-primary hover:bg-surface-container rounded-full p-1 transition-colors">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -128,15 +160,29 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
               })}
             </nav>
             <div className="pt-6 border-t border-outline-variant/30">
-              <button 
+              <button
+                type="button"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   setShowPostRequirementModal(true);
                 }}
-                className="w-full bg-primary text-on-primary py-3 rounded-xl font-label-bold transition-all active:scale-95"
+                className="w-full bg-primary text-on-primary py-3 rounded-xl font-label-bold transition-all hover:bg-primary/90 active:scale-95 cursor-pointer"
               >
-                POST REQUIREMENT
+                Post requirement
               </button>
+              <Link
+                href="/notifications"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full mt-3 flex items-center justify-center gap-2 border border-outline-variant/30 text-primary py-3 rounded-xl font-label-bold transition-all hover:bg-surface-container cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-lg">notifications</span>
+                Notifications
+                {notificationCount > 0 && (
+                  <span className="bg-error text-on-error text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                    {notificationCount}
+                  </span>
+                )}
+              </Link>
             </div>
           </div>
         </div>
@@ -147,59 +193,63 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
 
       {/* Footer */}
       <footer className="bg-surface-container-highest dark:bg-inverse-surface w-full mt-auto border-t border-outline-variant/30">
-        <div className="w-full py-lg px-margin-mobile md:px-margin-desktop grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
+        <div className="w-full py-lg px-margin-mobile md:px-margin-desktop grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
+          <div className="min-w-0">
             <span className="font-headline-md text-headline-md text-primary dark:text-primary-fixed-dim mb-4 block">BuildConnect</span>
-            <p className="text-on-surface-variant dark:text-secondary-fixed-dim max-w-sm mb-6">
+            <p className="text-on-surface-variant dark:text-secondary-fixed-dim max-w-[24rem] mb-6 leading-relaxed text-body-sm">
               Empowering Rwanda's construction industry through digital innovation and reliable supply chains.
             </p>
             <div className="flex gap-4">
-              <span className="material-symbols-outlined text-primary dark:text-primary-fixed-dim cursor-pointer hover:scale-110 transition-transform">social_leaderboard</span>
-              <span className="material-symbols-outlined text-primary dark:text-primary-fixed-dim cursor-pointer hover:scale-110 transition-transform">crossword</span>
-              <span className="material-symbols-outlined text-primary dark:text-primary-fixed-dim cursor-pointer hover:scale-110 transition-transform">link</span>
+              <button type="button" aria-label="Community" className="text-primary dark:text-primary-fixed-dim hover:text-tertiary dark:hover:text-tertiary-fixed hover:scale-110 transition-all">
+                <span className="material-symbols-outlined">social_leaderboard</span>
+              </button>
+              <button type="button" aria-label="News" className="text-primary dark:text-primary-fixed-dim hover:text-tertiary dark:hover:text-tertiary-fixed hover:scale-110 transition-all">
+                <span className="material-symbols-outlined">crossword</span>
+              </button>
+              <button type="button" aria-label="Website" className="text-primary dark:text-primary-fixed-dim hover:text-tertiary dark:hover:text-tertiary-fixed hover:scale-110 transition-all">
+                <span className="material-symbols-outlined">link</span>
+              </button>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-8">
-            <div>
-              <h5 className="font-label-bold text-primary dark:text-primary-fixed-dim mb-4">PLATFORM</h5>
-              <ul className="space-y-3">
-                <li>
-                  <Link href="/marketplace" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
-                    Marketplace
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/stores" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
-                    Suppliers Directory
-                  </Link>
-                </li>
-                <li>
-                  <button onClick={() => setShowPostRequirementModal(true)} className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm text-left">
-                    Request Quotes
-                  </button>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-label-bold text-primary dark:text-primary-fixed-dim mb-4">SUPPORT</h5>
-              <ul className="space-y-3">
-                <li>
-                  <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
-                    Help Center
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
-                    Contact Us
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
-                    Privacy Policy
-                  </a>
-                </li>
-              </ul>
-            </div>
+          <div>
+            <h5 className="font-label-bold text-primary dark:text-primary-fixed-dim mb-4">PLATFORM</h5>
+            <ul className="space-y-3">
+              <li>
+                <Link href="/marketplace" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
+                  Marketplace
+                </Link>
+              </li>
+              <li>
+                <Link href="/stores" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
+                  Suppliers Directory
+                </Link>
+              </li>
+              <li>
+                <button onClick={() => setShowPostRequirementModal(true)} className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm text-left">
+                  Request Quotes
+                </button>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h5 className="font-label-bold text-primary dark:text-primary-fixed-dim mb-4">SUPPORT</h5>
+            <ul className="space-y-3">
+              <li>
+                <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
+                  Help Center
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
+                  Contact Us
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
+                  Privacy Policy
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
         <div className="border-t border-outline-variant px-margin-mobile md:px-margin-desktop py-6 flex flex-col md:flex-row justify-between items-center gap-4">
@@ -207,9 +257,9 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
             © 2024 BuildConnect Rwanda. Solid Ground for Modern Construction.
           </span>
           <div className="flex gap-6">
-            <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed text-body-sm">Terms</a>
-            <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed text-body-sm">Privacy</a>
-            <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed text-body-sm">Cookies</a>
+            <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed hover:underline text-body-sm transition-colors">Terms</a>
+            <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed hover:underline text-body-sm transition-colors">Privacy</a>
+            <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed hover:underline text-body-sm transition-colors">Cookies</a>
           </div>
         </div>
       </footer>
@@ -218,7 +268,7 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
       <nav className="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center h-16 px-4 pb-safe bg-surface/80 backdrop-blur-md z-50 rounded-t-xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)] border-t border-outline-variant/30">
         <Link 
           href="/" 
-          className={`flex flex-col items-center justify-center px-4 py-1 transition-all active:scale-90 duration-200 ${
+          className={`flex flex-col items-center justify-center px-4 py-1 transition-all active:scale-90 duration-200 hover:opacity-80 ${
             pathname === "/" ? "bg-tertiary-container text-on-tertiary-container rounded-full" : "text-on-secondary-container"
           }`}
         >
@@ -227,7 +277,7 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
         </Link>
         <Link 
           href="/marketplace" 
-          className={`flex flex-col items-center justify-center px-4 py-1 transition-all active:scale-90 duration-200 ${
+          className={`flex flex-col items-center justify-center px-4 py-1 transition-all active:scale-90 duration-200 hover:opacity-80 ${
             pathname === "/marketplace" ? "bg-tertiary-container text-on-tertiary-container rounded-full" : "text-on-secondary-container"
           }`}
         >
@@ -236,7 +286,7 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
         </Link>
         <Link 
           href="/orders/track" 
-          className={`flex flex-col items-center justify-center px-4 py-1 transition-all active:scale-90 duration-200 ${
+          className={`flex flex-col items-center justify-center px-4 py-1 transition-all active:scale-90 duration-200 hover:opacity-80 ${
             pathname.startsWith("/orders") ? "bg-tertiary-container text-on-tertiary-container rounded-full" : "text-on-secondary-container"
           }`}
         >
@@ -245,7 +295,7 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
         </Link>
         <Link 
           href="/vendor" 
-          className="flex flex-col items-center justify-center text-on-secondary-container transition-all active:scale-90 duration-200"
+          className="flex flex-col items-center justify-center text-on-secondary-container transition-all active:scale-90 duration-200 hover:opacity-80"
         >
           <span className="material-symbols-outlined">storefront</span>
           <span className="font-label-md text-label-md">Portal</span>
@@ -254,9 +304,11 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
 
       {/* FAB for Mobile */}
       <div className="md:hidden fixed bottom-20 right-4 z-[55]">
-        <button 
+        <button
+          type="button"
           onClick={() => setShowPostRequirementModal(true)}
-          className="bg-tertiary text-on-tertiary w-14 h-14 rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+          aria-label="Post requirement"
+          className="bg-tertiary text-on-tertiary w-14 h-14 rounded-full shadow-lg flex items-center justify-center active:scale-95 hover:bg-tertiary/90 hover:shadow-xl transition-all cursor-pointer"
         >
           <span className="material-symbols-outlined text-2xl">add</span>
         </button>

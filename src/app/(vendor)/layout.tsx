@@ -4,10 +4,12 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useApp } from "@/context/AppContext";
+import { VendorQuoteProvider, useVendorQuote } from "@/context/VendorQuoteContext";
 
-export default function VendorLayout({ children }: { children: React.ReactNode }) {
+function VendorLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { notificationCount } = useApp();
+  const { itemCount: quoteCount } = useVendorQuote();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const vendorLinks = [
@@ -16,6 +18,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
     { label: "Inventory", href: "/vendor/inventory", icon: "inventory_2" },
     { label: "Manage stock", href: "/vendor/inventory/manage", icon: "edit_document" },
     { label: "Sales Analytics", href: "/vendor/analytics", icon: "analytics" },
+    { label: "Notifications", href: "/vendor/notifications", icon: "notifications" },
     { label: "Performance", href: "/vendor/performance", icon: "monitoring" },
     { label: "Store Settings", href: "/vendor/settings", icon: "settings" },
   ];
@@ -101,22 +104,36 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Notifications */}
-            <button className="p-2 text-on-surface-variant hover:bg-surface-container transition-colors rounded-full relative">
+            <Link
+              href="/vendor/store/cart"
+              aria-label="Storefront quote cart"
+              className="p-2 text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors rounded-full relative cursor-pointer"
+            >
+              <span className="material-symbols-outlined">shopping_cart</span>
+              {quoteCount > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-tertiary text-on-tertiary rounded-full text-[9px] font-bold flex items-center justify-center">
+                  {quoteCount}
+                </span>
+              )}
+            </Link>
+            <Link
+              href="/vendor/notifications"
+              aria-label="Vendor notifications"
+              className="p-2 text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors rounded-full relative cursor-pointer"
+            >
               <span className="material-symbols-outlined">notifications</span>
               {notificationCount > 0 && (
                 <span className="absolute top-1 right-1 w-4 h-4 bg-error text-on-error rounded-full text-[9px] font-bold flex items-center justify-center">
                   {notificationCount}
                 </span>
               )}
-            </button>
-            {/* Direct link back to Buyer portal */}
+            </Link>
             <Link
               href="/"
               className="hidden sm:flex items-center gap-1.5 px-4 py-2 border border-primary text-primary hover:bg-primary hover:text-white transition-all rounded-lg font-label-bold text-xs"
             >
-              <span className="material-symbols-outlined text-sm">shopping_cart</span>
-              BUYER PORTAL
+              <span className="material-symbols-outlined text-sm">storefront</span>
+              Buyer portal
             </Link>
           </div>
         </header>
@@ -125,8 +142,12 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
         {mobileMenuOpen && (
           <div className="lg:hidden fixed inset-0 z-[100] flex animate-in fade-in duration-200">
             <div
-              className="fixed inset-0 bg-on-background/60 backdrop-blur-sm"
+              className="fixed inset-0 bg-on-background/60 backdrop-blur-sm cursor-pointer"
               onClick={() => setMobileMenuOpen(false)}
+              role="button"
+              tabIndex={0}
+              aria-label="Close menu"
+              onKeyDown={(e) => e.key === "Escape" && setMobileMenuOpen(false)}
             />
             <div className="relative flex flex-col w-[280px] bg-secondary h-full py-8 px-6 shadow-2xl animate-in slide-in-from-left duration-200">
               <div className="flex justify-between items-center mb-8">
@@ -220,5 +241,13 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
         </Link>
       </nav>
     </div>
+  );
+}
+
+export default function VendorLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <VendorQuoteProvider>
+      <VendorLayoutInner>{children}</VendorLayoutInner>
+    </VendorQuoteProvider>
   );
 }

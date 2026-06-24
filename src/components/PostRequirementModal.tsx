@@ -1,42 +1,80 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
+import { getAccessToken } from "@/lib/api/client";
 
 export default function PostRequirementModal() {
-  const { showPostRequirementModal, setShowPostRequirementModal } = useApp();
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
+  const { showPostRequirementModal, setShowPostRequirementModal, postRequirement } = useApp();
   const [material, setMaterial] = useState("");
   const [quantity, setQuantity] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!showPostRequirementModal) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const resetForm = () => {
+    setMaterial("");
+    setQuantity("");
+    setLocation("");
+    setDescription("");
+    setSubmitted(false);
+    setIsSubmitting(false);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    setShowPostRequirementModal(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setMaterial("");
-      setQuantity("");
-      setLocation("");
-      setDescription("");
+    if (!isAuthenticated || !getAccessToken()) {
       setShowPostRequirementModal(false);
-    }, 2000);
+      router.push("/login");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await postRequirement({ material, quantity, location, description });
+      setSubmitted(true);
+      setTimeout(() => {
+        resetForm();
+        setShowPostRequirementModal(false);
+      }, 2200);
+    } catch {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-on-background/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div 
+    <div
+      className="fixed inset-0 bg-on-background/60 backdrop-blur-sm z-[10000] flex items-center justify-center p-4 animate-in fade-in duration-200"
+      onClick={handleClose}
+      role="presentation"
+    >
+      <div
         className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-outline-variant/30 animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="post-requirement-title"
       >
         <div className="bg-primary text-on-primary px-6 py-4 flex justify-between items-center">
-          <h3 className="font-headline-md text-headline-md">Post Construction Requirement</h3>
-          <button 
-            onClick={() => setShowPostRequirementModal(false)}
-            className="text-on-primary/80 hover:text-white transition-colors"
+          <h3 id="post-requirement-title" className="font-headline-md text-headline-md">
+            Post Construction Requirement
+          </h3>
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="Close"
+            className="text-on-primary/80 hover:text-white transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined text-2xl">close</span>
           </button>
@@ -48,16 +86,20 @@ export default function PostRequirementModal() {
               <span className="material-symbols-outlined text-4xl">check_circle</span>
             </div>
             <h4 className="font-headline-md text-headline-md text-primary mb-2">Requirement Posted!</h4>
-            <p className="text-on-surface-variant text-body-sm">
-              We have broadcasted your request to verified suppliers in {location || "Rwanda"}. You will receive bids shortly.
+            <p className="text-on-surface-variant text-body-sm max-w-[20rem] leading-relaxed">
+              We have broadcast your request to verified suppliers in {location || "Rwanda"}. Check notifications for
+              supplier bids.
             </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div>
-              <label className="block text-xs font-bold text-primary mb-1 uppercase tracking-wider">Material / Tool needed</label>
-              <input 
-                type="text" 
+              <label htmlFor="req-material" className="block text-xs font-bold text-primary mb-1">
+                Material / tool needed
+              </label>
+              <input
+                id="req-material"
+                type="text"
                 required
                 value={material}
                 onChange={(e) => setMaterial(e.target.value)}
@@ -68,9 +110,12 @@ export default function PostRequirementModal() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-primary mb-1 uppercase tracking-wider">Quantity / Volume</label>
-                <input 
-                  type="text" 
+                <label htmlFor="req-quantity" className="block text-xs font-bold text-primary mb-1">
+                  Quantity / volume
+                </label>
+                <input
+                  id="req-quantity"
+                  type="text"
                   required
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
@@ -79,9 +124,12 @@ export default function PostRequirementModal() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-primary mb-1 uppercase tracking-wider">Site Location</label>
-                <input 
-                  type="text" 
+                <label htmlFor="req-location" className="block text-xs font-bold text-primary mb-1">
+                  Site location
+                </label>
+                <input
+                  id="req-location"
+                  type="text"
                   required
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
@@ -92,8 +140,11 @@ export default function PostRequirementModal() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-primary mb-1 uppercase tracking-wider">Additional details</label>
-              <textarea 
+              <label htmlFor="req-description" className="block text-xs font-bold text-primary mb-1">
+                Additional details
+              </label>
+              <textarea
+                id="req-description"
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -103,18 +154,19 @@ export default function PostRequirementModal() {
             </div>
 
             <div className="pt-2 flex justify-end gap-3">
-              <button 
+              <button
                 type="button"
-                onClick={() => setShowPostRequirementModal(false)}
-                className="px-6 py-3 border border-outline-variant/30 rounded-xl text-primary font-bold text-body-sm hover:bg-surface-container-low transition-colors"
+                onClick={handleClose}
+                className="px-6 py-3 border border-outline-variant/30 rounded-xl text-primary font-bold text-body-sm hover:bg-surface-container-low transition-colors cursor-pointer"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 type="submit"
-                className="px-6 py-3 bg-tertiary-container text-on-tertiary-container hover:bg-tertiary rounded-xl font-label-bold text-body-sm transition-all"
+                disabled={isSubmitting}
+                className="px-6 py-3 bg-tertiary-container text-on-tertiary-container hover:bg-tertiary hover:text-white rounded-xl font-label-bold text-body-sm transition-all cursor-pointer disabled:opacity-60"
               >
-                Submit Request
+                {isSubmitting ? "Submitting..." : "Submit request"}
               </button>
             </div>
           </form>
