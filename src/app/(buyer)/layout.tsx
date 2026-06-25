@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
+import { RoleRouteGuard } from "@/components/RoleRouteGuard";
 
 export default function BuyerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -23,6 +24,7 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex flex-col min-h-screen bg-surface">
+      <RoleRouteGuard allowed="buyer" />
       {/* Sticky Top App Bar */}
       <nav className="bg-surface sticky top-0 z-[60] shadow-sm flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 transition-all">
         <div className="flex items-center gap-3">

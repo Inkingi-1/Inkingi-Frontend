@@ -3,7 +3,8 @@
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth, getHomeRouteForRole } from "@/context/AuthContext";
+import { ApiUser } from "@/lib/api/types";
 import { useApp } from "@/context/AppContext";
 import { ApiError } from "@/lib/api/client";
 
@@ -11,6 +12,7 @@ const DEMO_ACCOUNTS = [
   { label: "Customer", email: "customer@buildconnect.rw", password: "Customer@12345" },
   { label: "Vendor", email: "vendor@buildconnect.rw", password: "Vendor@12345" },
   { label: "Driver", email: "driver@buildconnect.rw", password: "Driver@12345" },
+  { label: "Admin", email: "admin@buildconnect.rw", password: "Admin@12345" },
 ];
 
 export default function LoginPage() {
@@ -24,6 +26,17 @@ export default function LoginPage() {
     >
       <LoginForm />
     </Suspense>
+  );
+}
+
+function isRedirectAllowed(role: ApiUser["role"], redirect: string): boolean {
+  if (role === "admin") return redirect.startsWith("/admin");
+  if (role === "vendor") return redirect.startsWith("/vendor");
+  if (role === "delivery") return redirect.startsWith("/delivery");
+  return (
+    !redirect.startsWith("/vendor") &&
+    !redirect.startsWith("/delivery") &&
+    !redirect.startsWith("/admin")
   );
 }
 
@@ -43,12 +56,11 @@ function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
+      const user = await login(email, password);
       await Promise.all([refreshCart(), refreshNotifications()]);
-      if (redirect) router.push(redirect);
-      else if (email.includes("vendor")) router.push("/vendor");
-      else if (email.includes("driver")) router.push("/delivery");
-      else router.push("/");
+      const dest =
+        redirect && isRedirectAllowed(user.role, redirect) ? redirect : getHomeRouteForRole(user.role);
+      router.push(dest);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Login failed. Is the API running on port 3000?");
     } finally {

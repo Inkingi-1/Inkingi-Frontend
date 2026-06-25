@@ -174,10 +174,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const savedRole = localStorage.getItem("bc_role") as UserRole;
-    if (savedRole === "buyer" || savedRole === "vendor" || savedRole === "carrier") {
-      setRoleState(savedRole);
-    }
+    localStorage.removeItem("bc_role");
     void refreshCart();
     void refreshNotifications();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

@@ -4,11 +4,10 @@ import "./globals.css";
 import PWARegister from "@/components/PWARegister";
 import { AppProvider } from "@/context/AppContext";
 import { AuthProvider } from "@/context/AuthContext";
-import RoleSwitcher from "@/components/RoleSwitcher";
+import ClientBootstrap from "@/components/ClientBootstrap";
 import PostRequirementModal from "@/components/PostRequirementModal";
 import CartToast from "@/components/CartToast";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import ClientBootstrap from "@/components/ClientBootstrap";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -44,7 +43,6 @@ export default function RootLayout({
             <AppProvider>
               <ClientBootstrap />
               <PWARegister />
-              <RoleSwitcher />
               <PostRequirementModal />
               <CartToast />
               <main className="flex-1 w-full min-w-0">{children}</main>

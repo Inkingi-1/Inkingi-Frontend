@@ -8,6 +8,7 @@ import {
   ApiOrder,
   ApiProduct,
   ApiVendor,
+  ApiUser,
   AuthTokens,
   PaginatedResult,
 } from "./types";
@@ -126,6 +127,16 @@ export const deliveriesApi = {
   confirm: (id: string) => apiPost<ApiDelivery>(`/deliveries/${id}/confirm`, {}),
   earnings: () => apiGet<Record<string, number>>("/deliveries/earnings"),
   history: () => apiGet<ApiDelivery[]>("/deliveries/history"),
+};
+
+export const adminApi = {
+  dashboard: () => apiGet<Record<string, number>>("/admin/dashboard"),
+  users: (page = 1, limit = 50) =>
+    apiGet<PaginatedResult<ApiUser>>(`/admin/users?page=${page}&limit=${limit}`),
+  assignRole: (userId: string, role: ApiUser["role"]) =>
+    apiPatch<ApiUser>(`/admin/users/${userId}/role`, { role }),
+  suspendUser: (userId: string, suspend: boolean) =>
+    apiPatch<ApiUser>(`/admin/users/${userId}/suspend`, { suspend }),
 };
 
 export const healthApi = {

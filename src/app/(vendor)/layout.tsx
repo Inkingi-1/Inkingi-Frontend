@@ -5,10 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { VendorQuoteProvider, useVendorQuote } from "@/context/VendorQuoteContext";
+import { RoleRouteGuard } from "@/components/RoleRouteGuard";
+import { useAuth } from "@/context/AuthContext";
 
 function VendorLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { notificationCount } = useApp();
+  const { logout } = useAuth();
   const { itemCount: quoteCount } = useVendorQuote();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -25,6 +28,7 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="bg-surface text-on-surface font-body-md min-h-screen">
+      <RoleRouteGuard allowed="vendor" />
       {/* Desktop Sidebar */}
       <aside className="fixed left-0 top-0 h-full w-[280px] bg-secondary hidden lg:flex flex-col py-8 shadow-lg z-[60]">
         <div className="px-6 mb-10">
@@ -128,13 +132,14 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
                 </span>
               )}
             </Link>
-            <Link
-              href="/"
+            <button
+              type="button"
+              onClick={() => void logout()}
               className="hidden sm:flex items-center gap-1.5 px-4 py-2 border border-primary text-primary hover:bg-primary hover:text-white transition-all rounded-lg font-label-bold text-xs"
             >
-              <span className="material-symbols-outlined text-sm">storefront</span>
-              Buyer portal
-            </Link>
+              <span className="material-symbols-outlined text-sm">logout</span>
+              Log out
+            </button>
           </div>
         </header>
 
@@ -233,11 +238,13 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
           <span className="font-label-md text-label-md">Analytics</span>
         </Link>
         <Link
-          href="/"
-          className="flex flex-col items-center justify-center text-surface-variant/70 active:scale-90 transition-all"
+          href="/vendor/notifications"
+          className={`flex flex-col items-center justify-center px-4 py-1 transition-all active:scale-90 duration-200 ${
+            pathname === "/vendor/notifications" ? "text-tertiary-fixed font-bold bg-white/10 rounded-full" : "text-surface-variant/70"
+          }`}
         >
-          <span className="material-symbols-outlined">shopping_cart</span>
-          <span className="font-label-md text-label-md">Shop</span>
+          <span className="material-symbols-outlined">notifications</span>
+          <span className="font-label-md text-label-md">Alerts</span>
         </Link>
       </nav>
     </div>

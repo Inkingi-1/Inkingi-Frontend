@@ -9,7 +9,7 @@ interface AuthContextType {
   user: ApiUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<ApiUser>;
   logout: () => Promise<void>;
   refreshUser: () => void;
 }
@@ -50,6 +50,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(result.user);
     setHasToken(true);
     localStorage.setItem(USER_KEY, JSON.stringify(result.user));
+    localStorage.removeItem("bc_role");
+    return result.user;
   }, []);
 
   const logout = useCallback(async () => {
@@ -111,4 +113,21 @@ export function mapApiRoleToPortal(role: ApiUser["role"]): "buyer" | "vendor" | 
   if (role === "vendor") return "vendor";
   if (role === "delivery") return "carrier";
   return "buyer";
+}
+
+export function getHomeRouteForRole(role: ApiUser["role"]): string {
+  if (role === "admin") return "/admin";
+  if (role === "vendor") return "/vendor";
+  if (role === "delivery") return "/delivery";
+  return "/";
+}
+
+export function roleLabel(role: ApiUser["role"]): string {
+  const labels: Record<ApiUser["role"], string> = {
+    customer: "Customer",
+    vendor: "Vendor",
+    delivery: "Driver",
+    admin: "Admin",
+  };
+  return labels[role] ?? role;
 }
