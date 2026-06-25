@@ -237,19 +237,19 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
             <h5 className="font-label-bold text-primary dark:text-primary-fixed-dim mb-4">SUPPORT</h5>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
+                <Link href="/help" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
                   Help Center
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
+                <Link href="/contact" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
                   Contact Us
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
+                <Link href="/privacy" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors text-body-sm">
                   Privacy Policy
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -259,9 +259,9 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
             © 2024 BuildConnect Rwanda. Solid Ground for Modern Construction.
           </span>
           <div className="flex gap-6">
-            <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed hover:underline text-body-sm transition-colors">Terms</a>
-            <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed hover:underline text-body-sm transition-colors">Privacy</a>
-            <a href="#" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed hover:underline text-body-sm transition-colors">Cookies</a>
+            <Link href="/terms" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed hover:underline text-body-sm transition-colors">Terms</Link>
+            <Link href="/privacy" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed hover:underline text-body-sm transition-colors">Privacy</Link>
+            <Link href="/cookies" className="text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed hover:underline text-body-sm transition-colors">Cookies</Link>
           </div>
         </div>
       </footer>

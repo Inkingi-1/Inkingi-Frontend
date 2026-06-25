@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth, getHomeRouteForRole } from "@/context/AuthContext";
+import { isPublicInfoPath } from "@/lib/publicRoutes";
 
 /** Redirects logged-in users to their assigned portal (customers may use buyer routes). */
 export function RoleRouteGuard({ allowed }: { allowed: "buyer" | "vendor" | "carrier" | "admin" }) {
@@ -12,6 +13,7 @@ export function RoleRouteGuard({ allowed }: { allowed: "buyer" | "vendor" | "car
 
   useEffect(() => {
     if (isLoading || !isAuthenticated || !user) return;
+    if (isPublicInfoPath(pathname)) return;
 
     const home = getHomeRouteForRole(user.role);
     const portal =
